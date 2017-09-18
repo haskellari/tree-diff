@@ -100,7 +100,10 @@ instance ToExpr Bool where toExpr = defaultExprViaShow
 
 instance ToExpr Char where
     toExpr = defaultExprViaShow
-    listToExpr = defaultExprViaShow
+    listToExpr s = case lines s of
+        []  -> App "\"\"" []
+        [l] -> defaultExprViaShow l
+        ls  -> App "unlines" [Lst (map defaultExprViaShow ls)]
 
 instance ToExpr a => ToExpr (Maybe a) where
     toExpr Nothing  = App "Nothing" []

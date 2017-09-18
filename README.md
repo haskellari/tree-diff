@@ -1,8 +1,10 @@
 # tree-diff
 
-## Example:
+## Examples
 
 ![](https://raw.githubusercontent.com/phadej/tree-diff/master/cabal-diff.png)
+
+![](https://raw.githubusercontent.com/phadej/tree-diff/master/cabal-diff-2.png)
 
 ## Pretty-printing
 
