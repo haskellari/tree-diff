@@ -1,0 +1,142 @@
+name:                tree-diff
+version:             0
+synopsis:            Diffing of (expression) trees.
+description:
+  Common diff algorithm works on list structures:
+  .
+  @
+  diff :: Eq a => [a] -> [a] -> [Edit a]
+  @
+  .
+  This package works on trees.
+  .
+  @
+  treeDiff :: Eq a => Tree a -> Tree a -> Edit (EditTree a)
+  @
+  .
+  This package also provides a way to diff arbitrary ADTs,
+  using @Generics@-derivable helpers.
+  .
+  This package differs from <http://hackage.haskell.org/package/gdiff gdiff>,
+  in a two ways: @tree-diff@ doesn't have patch function,
+  and the "edit-script" is a tree itself, which is useful for pretty-printing.
+  .
+  @
+  >>> prettyEditExpr $ ediff (Foo 42 [True, False] "old") (Foo 42 [False, False, True] "new")
+  Foo
+    {fooBool = [-True, +False, False, +True],
+     fooInt = 42,
+     fooString = -"old" +"new"}
+  @
+homepage:            https://github.com/phadej/tree-diff
+bug-reports:         https://github.com/phadej/tree-diff/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:          Oleg.Grenrus <oleg.grenrus@iki.fi>
+copyright:           (c) 2017 Oleg Grenrus
+category:            Data
+build-type:          Custom
+extra-source-files:  README.md ChangeLog.md
+cabal-version:       >=1.10
+tested-with:
+  GHC==7.8.4,
+  GHC==7.10.3,
+  GHC==8.0.2,
+  GHC==8.2.1
+extra-source-files:
+  fixtures/exfoo.expr
+
+custom-setup
+  setup-depends:
+    base, Cabal, cabal-doctest >=1.0.2 && <1.1
+
+source-repository head
+  type:      git
+  location:  https://github.com/phadej/tree-diff.git
+
+library
+  exposed-modules:
+    Data.TreeDiff
+    Data.TreeDiff.List
+    Data.TreeDiff.Tree
+    Data.TreeDiff.Expr
+    Data.TreeDiff.Class
+    Data.TreeDiff.Pretty
+    Data.TreeDiff.Parser
+    Data.TreeDiff.Golden
+    Data.TreeDiff.QuickCheck
+  build-depends:
+    base                 >=4.7      && <4.11,
+    aeson                >=1.2.1.0  && <1.3,
+    ansi-wl-pprint       >=0.6.8.1  && <0.7,
+    ansi-terminal        >=0.6.3.1  && <0.7,
+    base-compat          >=0.9.3    && <0.10,
+    bytestring           >=0.10.4.0 && <0.11,
+    containers           >=0.5.5.1  && <0.6,
+    generics-sop         >=0.3.1.0  && <0.4,
+    hashable             >=1.2.6.1  && <1.3,
+    MemoTrie             >=0.6.8    && <0.7,
+    parsec               >=3.1.11   && <3.2,
+    parsers              >=0.12.7   && <0.13,
+    pretty               >=1.1.1.1  && <1.2,
+    QuickCheck           >=2.10.0.1 && <2.11,
+    scientific           >=0.3.5.2  && <0.4,
+    tagged               >=0.8.5    && <0.9,
+    text                 >=1.2.2.2  && <1.3,
+    time                 >=1.4.2    && <1.9,
+    unordered-containers >=0.2.8.0  && <0.3,
+    uuid-types           >=1.0.3    && <1.1,
+    vector               >=0.12     && <0.13
+
+  if !impl(ghc >= 8.0)
+    build-depends:
+      semigroups         >=0.18.3   && <0.19
+
+  if !impl(ghc >= 7.10)
+    build-depends:
+      void               >=0.7.2    && <0.8,
+      nats               >=1.1.1    && <1.2,
+      transformers       >=0.3.0.0  && <0.6
+
+  other-extensions:
+    ConstraintKinds
+    CPP
+    DefaultSignatures
+    FlexibleContexts
+    GADTs
+    RankNTypes
+    ScopedTypeVariables
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+test-suite doctests
+  type:                exitcode-stdio-1.0
+  main-is:             doctests.hs
+  x-doctest-options:   -D__DOCTEST__
+  build-depends:
+    base,
+    doctest              >=0.13.0   && <0.14,
+    template-haskell,
+    QuickCheck
+  ghc-options:         -Wall -threaded
+  hs-source-dirs:      tests
+  default-language:    Haskell2010
+
+test-suite test
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  main-is:             Tests.hs
+  hs-source-dirs:      tests
+  ghc-options:         -Wall -threaded
+  build-depends:
+    base, tree-diff,
+    base-compat,
+    QuickCheck,
+    ansi-terminal,
+    ansi-wl-pprint,
+    parsec,
+    trifecta             >=1.7.1.1  && <1.8,
+    tasty                >=0.11.2.5 && <0.12,
+    tasty-golden         >=2.3.1.1  && <2.4,
+    tasty-quickcheck     >=0.9.1    && <0.10
