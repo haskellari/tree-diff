@@ -8,7 +8,10 @@
 module Data.TreeDiff.Class (
     ediff,
     ToExpr (..),
-    defaultExprViaShow
+    defaultExprViaShow,
+    -- * SOP
+    sopToExpr,
+    sopNPToExpr,
     ) where
 
 import Data.Foldable      (toList)
@@ -85,7 +88,7 @@ import qualified Data.Aeson as Aeson
 -- >>> let x = (1, Just 2) :: (Int, Maybe Int)
 -- >>> let y = (1, Nothing)
 -- >>> prettyEditExpr (ediff x y)
--- (,) 1 -(Just 2) +Nothing
+-- _,_ 1 -(Just 2) +Nothing
 --
 -- >>> data Foo = Foo { fooInt :: Either Char Int, fooBool :: [Maybe Bool], fooString :: String } deriving (Eq, Generic)
 -- >>> instance ToExpr Foo
@@ -105,7 +108,7 @@ ediff x y = exprDiff (toExpr x) (toExpr y)
 -- |
 --
 -- >>> toExpr ((1, Just 2) :: (Int, Maybe Int))
--- App "(,)" [App "1" [],App "Just" [App "2" []]]
+-- App "_,_" [App "1" [],App "Just" [App "2" []]]
 --
 class ToExpr a where
     toExpr :: a -> Expr
@@ -123,7 +126,9 @@ instance ToExpr Expr where
 defaultExprViaShow :: Show a => a -> Expr
 defaultExprViaShow x = App (show x) []
 
-sopToExpr :: All2 ToExpr xss => DatatypeInfo xss -> SOP I xss -> Expr
+-- | >>> prettyExpr $ sopToExpr (gdatatypeInfo (Proxy :: Proxy String)) (gfrom "foo")
+-- _:_ 'f' "oo"
+sopToExpr :: (All2 ToExpr xss) => DatatypeInfo xss -> SOP I xss -> Expr
 sopToExpr di (SOP xss) = hcollapse $ hcliftA2
     (Proxy :: Proxy (All ToExpr))
     (\ci xs -> K (sopNPToExpr isNewtype ci xs))
@@ -135,7 +140,7 @@ sopToExpr di (SOP xss) = hcollapse $ hcliftA2
         ADT _ _ _     -> False
 
 sopNPToExpr :: All ToExpr xs => Bool -> ConstructorInfo xs -> NP I xs -> Expr
-sopNPToExpr _ (Infix cn _ _) xs = App cn $ hcollapse $
+sopNPToExpr _ (Infix cn _ _) xs = App ("_" ++ cn ++ "_") $ hcollapse $
     hcmap (Proxy :: Proxy ToExpr) (mapIK toExpr) xs
 sopNPToExpr _ (Constructor cn) xs = App cn $ hcollapse $
     hcmap (Proxy :: Proxy ToExpr) (mapIK toExpr) xs
@@ -175,7 +180,12 @@ instance ToExpr Word64 where toExpr = defaultExprViaShow
 
 instance ToExpr (Proxy a) where toExpr = defaultExprViaShow
 
-
+-- | >>> prettyExpr $ toExpr 'a'
+-- 'a'
+--
+-- >>> prettyExpr $ toExpr "Hello world"
+-- "Hello world"
+--
 instance ToExpr Char where
     toExpr = defaultExprViaShow
     listToExpr = stringToExpr "unlines" lines
@@ -198,18 +208,18 @@ instance ToExpr a => ToExpr [a] where
     toExpr = listToExpr
 
 instance (ToExpr a, ToExpr b) => ToExpr (a, b) where
-    toExpr (a, b) = App "(,)" [toExpr a, toExpr b]
+    toExpr (a, b) = App "_,_" [toExpr a, toExpr b]
 instance (ToExpr a, ToExpr b, ToExpr c) => ToExpr (a, b, c) where
-    toExpr (a, b, c) = App "(,,)" [toExpr a, toExpr b, toExpr c]
+    toExpr (a, b, c) = App "_,_,_" [toExpr a, toExpr b, toExpr c]
 instance (ToExpr a, ToExpr b, ToExpr c, ToExpr d) => ToExpr (a, b, c, d) where
-    toExpr (a, b, c, d) = App "(,,,)" [toExpr a, toExpr b, toExpr c, toExpr d]
+    toExpr (a, b, c, d) = App "_,_,_,_" [toExpr a, toExpr b, toExpr c, toExpr d]
 instance (ToExpr a, ToExpr b, ToExpr c, ToExpr d, ToExpr e) => ToExpr (a, b, c, d, e) where
-    toExpr (a, b, c, d, e) = App "(,,,,)" [toExpr a, toExpr b, toExpr c, toExpr d, toExpr e]
+    toExpr (a, b, c, d, e) = App "_,_,_,_,_" [toExpr a, toExpr b, toExpr c, toExpr d, toExpr e]
 
 -- | >>> prettyExpr $ toExpr (3 % 12 :: Rational)
--- % 1 4
+-- _%_ 1 4
 instance (ToExpr a, Integral a) => ToExpr (Ratio.Ratio a) where
-    toExpr r = App "%" [ toExpr $ Ratio.numerator r, toExpr $ Ratio.denominator r ]
+    toExpr r = App "_%_" [ toExpr $ Ratio.numerator r, toExpr $ Ratio.denominator r ]
 instance HasResolution a => ToExpr (Fixed a) where toExpr = defaultExprViaShow
 
 -- | >>> prettyExpr $ toExpr $ Identity 'a'
@@ -297,7 +307,7 @@ instance ToExpr BS8.ByteString where
 -------------------------------------------------------------------------------
 
 -- | >>> prettyExpr $ toExpr (123.456 :: Scientific)
--- scientific 123456 -3
+-- scientific 123456 `-3`
 instance ToExpr Sci.Scientific where
     toExpr s = App "scientific" [ toExpr $ Sci.coefficient s, toExpr $ Sci.base10Exponent s ]
 
@@ -361,3 +371,4 @@ instance ToExpr Aeson.Value
 -- >>> import Data.Ratio ((%))
 -- >>> import Data.Time (Day (..))
 -- >>> import Data.Scientific (Scientific)
+-- >>> import Data.TreeDiff.Pretty
