@@ -69,6 +69,7 @@ data Pretty doc = Pretty
     { ppCon        :: ConstructorName -> doc
     , ppRec        :: [(FieldName, doc)] -> doc
     , ppLst        :: [doc] -> doc
+    , ppCpy        :: doc -> doc
     , ppIns        :: doc -> doc
     , ppDel        :: doc -> doc
     , ppSep        :: [doc] -> doc
@@ -90,6 +91,7 @@ ppExpr p = impl where
 ppEditExpr :: Pretty doc -> Edit EditExpr -> doc
 ppEditExpr p = ppSep p . ppEdit
   where
+    ppEdit (Cpy (EditExp expr)) = [ ppCpy p $ ppExpr p expr ]
     ppEdit (Cpy expr) = [ ppEExpr expr ]
     ppEdit (Ins expr) = [ ppIns p (ppEExpr expr) ]
     ppEdit (Del expr) = [ ppDel p (ppEExpr expr) ]

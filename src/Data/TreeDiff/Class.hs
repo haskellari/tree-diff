@@ -127,6 +127,7 @@ prettyP = Pretty
     , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
                . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
     , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
+    , ppCpy    = id
     , ppIns    = \d -> PP.char '+' PP.<> d
     , ppDel    = \d -> PP.char '-' PP.<> d
     , ppSep    = PP.sep
