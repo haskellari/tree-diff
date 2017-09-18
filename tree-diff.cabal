@@ -1,6 +1,6 @@
 name:                tree-diff
 version:             0
-synopsis:            Diffing of (expression) trees.
+synopsis:            Diffing of tree structures.
 description:
   Common diff algorithm works on list structures:
   .
@@ -32,8 +32,6 @@ build-type:          Custom
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 tested-with:
-  GHC==7.4.2,
-  GHC==7.6.3,
   GHC==7.8.4,
   GHC==7.10.3,
   GHC==8.0.2,
@@ -55,11 +53,11 @@ library
     Data.TreeDiff.Expr
     Data.TreeDiff.Class
   build-depends:
-    base         >=4.5     && <4.11,
+    base         >=4.7     && <4.11,
     base-compat  >=0.9.3   && <0.10,
-    containers   >=0.4.2.1 && <0.6,
+    containers   >=0.5.5.1 && <0.6,
     generics-sop >=0.3.1.0 && <0.4,
-    MemoTrie     >=0.6.2   && <0.7,
+    MemoTrie     >=0.6.8   && <0.7,
     vector       >=0.12    && <0.13
   if !impl (ghc >= 7.8)
     build-depends:
