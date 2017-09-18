@@ -33,39 +33,35 @@ data Expr
 exprDiff :: Expr -> Expr -> Edit EditExpr
 exprDiff = impl
   where
+    impl ea eb | ea == eb = Cpy (EditExp ea)
+
     impl ea@(App a as) eb@(App b bs)
         | a == b = Cpy $ EditApp a (map recurse (diffBy (==) as bs))
-        | otherwise = Swp (treeToEdit ea) (treeToEdit eb)
+        | otherwise = Swp (EditExp ea) (EditExp eb)
     impl ea@(Rec a as) eb@(Rec b bs)
         | a == b = Cpy $ EditRec a $ Map.unions [inter, onlyA, onlyB]
-        | otherwise = Swp (treeToEdit ea) (treeToEdit eb)
+        | otherwise = Swp (EditExp ea) (EditExp eb)
       where
         inter = Map.intersectionWith exprDiff as bs
-        onlyA = fmap (Cpy . treeToEdit) (Map.difference as inter)
-        onlyB = fmap (Cpy . treeToEdit) (Map.difference bs inter)
+        onlyA = fmap (Cpy . EditExp) (Map.difference as inter)
+        onlyB = fmap (Cpy . EditExp) (Map.difference bs inter)
     impl (Lst as) (Lst bs) =
         Cpy $ EditLst (map recurse (diffBy (==) as bs))
 
     -- If higher level doesn't match, just swap.
-    impl a b = Swp (treeToEdit a) (treeToEdit b)
+    impl a b = Swp (EditExp a) (EditExp b)
 
-    recurse (Ins x)   = Ins (treeToEdit x)
-    recurse (Del y)   = Ins (treeToEdit y)
-    recurse (Cpy z)   = Cpy (treeToEdit z)
+    recurse (Ins x)   = Ins (EditExp x)
+    recurse (Del y)   = Ins (EditExp y)
+    recurse (Cpy z)   = Cpy (EditExp z)
     recurse (Swp x y) = impl x y
 
 data EditExpr
     = EditApp ConstructorName [Edit EditExpr]
     | EditRec ConstructorName (Map FieldName (Edit EditExpr))
     | EditLst [Edit EditExpr]
+    | EditExp Expr  -- ^ unchanged tree
   deriving Show
-
-treeToEdit :: Expr -> EditExpr
-treeToEdit = go
-    where
-      go (App x xs) = EditApp x (fmap (Cpy . go) xs)
-      go (Rec x xs) = EditRec x (fmap (Cpy . go) xs)
-      go (Lst xs)   = EditLst (fmap (Cpy . go) xs)
 
 -- | Because we don't want to commit to single pretty printing library,
 -- we use explicit dictionary.
@@ -80,23 +76,34 @@ data Pretty doc = Pretty
     , ppHang       :: doc -> doc -> doc
     }
 
+ppExpr :: Pretty doc -> Expr -> doc
+ppExpr p = impl where
+    impl (App x []) = ppCon p x
+    impl (App x xs) = ppParens p $ ppHang p (ppCon p x) $
+        ppSep p $ map impl xs
+    impl (Rec x xs) = ppHang p (ppCon p x) $ ppRec p $
+        map ppField' $ Map.toList xs
+    impl (Lst xs)   = ppLst p (map impl xs)
+
+    ppField' (n, e) = (n, impl e)
+
 ppEditExpr :: Pretty doc -> Edit EditExpr -> doc
 ppEditExpr p = ppSep p . ppEdit
   where
-    ppEdit (Cpy expr) = [ ppExpr expr ]
-    ppEdit (Ins expr) = [ ppIns p (ppExpr expr) ]
-    ppEdit (Del expr) = [ ppDel p (ppExpr expr) ]
+    ppEdit (Cpy expr) = [ ppEExpr expr ]
+    ppEdit (Ins expr) = [ ppIns p (ppEExpr expr) ]
+    ppEdit (Del expr) = [ ppDel p (ppEExpr expr) ]
     ppEdit (Swp a b) =
-        [ ppIns p (ppExpr a)
-        , ppDel p (ppExpr b)
+        [ ppDel p (ppEExpr a)
+        , ppIns p (ppEExpr b)
         ]
 
-    ppExpr (EditApp x []) = ppCon p x
-    ppExpr (EditApp x xs) = ppParens p $ ppHang p (ppCon p x) $
+    ppEExpr (EditApp x []) = ppCon p x
+    ppEExpr (EditApp x xs) = ppParens p $ ppHang p (ppCon p x) $
         ppSep p $ concatMap ppEdit xs
-    ppExpr (EditRec x xs) = ppHang p (ppCon p x) $ ppRec p $
+    ppEExpr (EditRec x xs) = ppHang p (ppCon p x) $ ppRec p $
         map ppField' $ Map.toList xs
-    ppExpr (EditLst xs)   = ppLst p (concatMap ppEdit xs)
+    ppEExpr (EditLst xs)   = ppLst p (concatMap ppEdit xs)
+    ppEExpr (EditExp x)    = ppExpr p x
 
     ppField' (n, e) = (n, ppSep p $ ppEdit e)
-

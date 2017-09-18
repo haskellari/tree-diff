@@ -19,13 +19,13 @@ import qualified Text.PrettyPrint as PP
 --
 -- Let's start from simple tree. We pretty print them as s-expressions.
 --
--- >>> let x = Node 'a' [Node 'b' [], Node 'c' [pure 'd', pure 'e'], Node 'f' []]
+-- >>> let x = Node 'a' [Node 'b' [], Node 'c' [return 'd', return 'e'], Node 'f' []]
 -- >>> ppTree PP.char x
 -- (a b (c d e) f)
 --
 -- If we modify an argument in a tree, we'll notice it's changed:
 --
--- >>> let y = Node 'a' [Node 'b' [], Node 'c' [pure 'x', pure 'e'], Node 'f' []]
+-- >>> let y = Node 'a' [Node 'b' [], Node 'c' [return 'x', return 'e'], Node 'f' []]
 -- >>> ppTree PP.char y
 -- (a b (c x e) f)
 --
@@ -44,7 +44,7 @@ import qualified Text.PrettyPrint as PP
 --
 -- If we add arguments, they are spotted too:
 --
--- >>> let w = Node 'a' [Node 'b' [], Node 'c' [pure 'd', pure 'x', pure 'e'], Node 'f' []]
+-- >>> let w = Node 'a' [Node 'b' [], Node 'c' [return 'd', return 'x', return 'e'], Node 'f' []]
 -- >>> ppTree PP.char w
 -- (a b (c d x e) f)
 --

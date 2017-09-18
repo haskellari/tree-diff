@@ -18,8 +18,16 @@ description:
   using @Generics@-derivable helpers.
   .
   This package differs from <http://hackage.haskell.org/package/gdiff gdiff>,
-  as we don't patch ADTs, and the "patch" is a tree, which is useful for 
-  visualisation.
+  in a two ways: @tree-diff@ doesn't have patch function,
+  and the "edit-script" is a tree itself, which is useful for pretty-printing.
+  .
+  @
+  >>> pretty $ ediff (Foo 42 [True, False] "old") (Foo 42 [False, False, True] "new")
+  Foo
+    {fooBool = [-True +False False +True],
+     fooInt = 42,
+     fooString = -"old" +"new"}
+  @
 homepage:            https://github.com/phadej/tree-diff
 bug-reports:         https://github.com/phadej/tree-diff/issues
 license:             BSD3
@@ -32,8 +40,6 @@ build-type:          Custom
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 tested-with:
-  GHC==7.4.2,
-  GHC==7.6.3,
   GHC==7.8.4,
   GHC==7.10.3,
   GHC==8.0.2,
@@ -55,17 +61,20 @@ library
     Data.TreeDiff.Expr
     Data.TreeDiff.Class
   build-depends:
-    base         >=4.5     && <4.11,
+    base         >=4.7     && <4.11,
     base-compat  >=0.9.3   && <0.10,
-    containers   >=0.4.2.1 && <0.6,
+    containers   >=0.5.5.1 && <0.6,
     generics-sop >=0.3.1.0 && <0.4,
-    MemoTrie     >=0.6.2   && <0.7,
+    MemoTrie     >=0.6.8   && <0.7,
     vector       >=0.12    && <0.13
-  if !impl (ghc >= 7.8)
-    build-depends:
-      tagged     >= 0.7    && < 0.9
   other-extensions:
+    ConstraintKinds
     CPP
+    DefaultSignatures
+    FlexibleContexts
+    GADTs
+    RankNTypes
+    ScopedTypeVariables
   hs-source-dirs:      src
   default-language:    Haskell2010
 
