@@ -128,7 +128,7 @@ prettyP :: Pretty PP.Doc
 prettyP = Pretty
     { ppCon    = PP.text
     , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
-               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.</> d)
+               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
     , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
     , ppCpy    = id
     , ppIns    = \d -> PP.char '+' PP.<> d

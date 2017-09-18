@@ -52,7 +52,7 @@ exprDiff = impl
     impl a b = Swp (EditExp a) (EditExp b)
 
     recurse (Ins x)   = Ins (EditExp x)
-    recurse (Del y)   = Ins (EditExp y)
+    recurse (Del y)   = Del (EditExp y)
     recurse (Cpy z)   = Cpy (EditExp z)
     recurse (Swp x y) = impl x y
 
