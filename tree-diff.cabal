@@ -1,0 +1,84 @@
+name:                tree-diff
+version:             0
+synopsis:            Diffing of (expression) trees.
+description:
+  Common diff algorithm works on list structures:
+  .
+  @
+  diff :: Eq a => [a] -> [a] -> [Edit a]
+  @
+  .
+  This package works on trees.
+  .
+  @
+  treeDiff :: Eq a => Tree a -> Tree a -> Edit (EditTree a)
+  @
+  .
+  This package also provides a way to diff arbitrary ADTs,
+  using @Generics@-derivable helpers.
+  .
+  This package differs from <http://hackage.haskell.org/package/gdiff gdiff>,
+  as we don't patch ADTs, and the "patch" is a tree, which is useful for 
+  visualisation.
+homepage:            https://github.com/phadej/tree-diff
+bug-reports:         https://github.com/phadej/tree-diff/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:          Oleg.Grenrus <oleg.grenrus@iki.fi>
+copyright:           (c) 2017 Oleg Grenrus
+category:            Data
+build-type:          Custom
+extra-source-files:  ChangeLog.md
+cabal-version:       >=1.10
+tested-with:
+  GHC==7.4.2,
+  GHC==7.6.3,
+  GHC==7.8.4,
+  GHC==7.10.3,
+  GHC==8.0.2,
+  GHC==8.2.1
+
+custom-setup
+  setup-depends:
+    base, Cabal, cabal-doctest >=1.0.2 && <1.1
+
+source-repository head
+  type:      git
+  location:  https://github.com/phadej/tree-diff.git
+
+library
+  exposed-modules:
+    Data.TreeDiff
+    Data.TreeDiff.List
+    Data.TreeDiff.Tree
+    Data.TreeDiff.Expr
+    Data.TreeDiff.Class
+  build-depends:
+    base         >=4.5     && <4.11,
+    base-compat  >=0.9.3   && <0.10,
+    containers   >=0.4.2.1 && <0.6,
+    generics-sop >=0.3.1.0 && <0.4,
+    MemoTrie     >=0.6.2   && <0.7,
+    vector       >=0.12    && <0.13
+  if !impl (ghc >= 7.8)
+    build-depends:
+      tagged     >= 0.7    && < 0.9
+  other-extensions:
+    CPP
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+test-suite doctests
+  type:                exitcode-stdio-1.0
+  main-is:             doctests.hs
+  x-doctest-options:   -D__DOCTEST__
+  build-depends:
+    base,
+    doctest    >= 0.11.3 && <0.12,
+    QuickCheck == 2.10.*,
+    template-haskell,
+    pretty     >=1.1 && <1.2
+  ghc-options:         -Wall -threaded
+  hs-source-dirs:      tests
+  default-language:    Haskell2010

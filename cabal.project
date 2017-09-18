@@ -1,0 +1,4 @@
+packages: .
+
+package tree-diff
+  ghc-options: -Wall
