@@ -10,6 +10,7 @@ module Data.TreeDiff.Expr (
     exprDiff,
     -- * Pretty printing
     Pretty (..),
+    ppExpr,
     ppEditExpr,
     ) where
 
