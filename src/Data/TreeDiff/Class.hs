@@ -106,6 +106,10 @@ instance ToExpr a => ToExpr (Maybe a) where
     toExpr Nothing  = App "Nothing" []
     toExpr (Just x) = App "Just" [toExpr x]
 
+instance (ToExpr a, ToExpr b) => ToExpr (Either a b) where
+    toExpr (Left x)  = App "Left"  [toExpr x]
+    toExpr (Right y) = App "Right" [toExpr y]
+
 instance ToExpr a => ToExpr [a] where
     toExpr = listToExpr
 
