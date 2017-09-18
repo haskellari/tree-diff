@@ -33,7 +33,7 @@ prettyP :: Pretty PP.Doc
 prettyP = Pretty
     { ppCon    = PP.text
     , ppRec    = PP.encloseSep PP.lbrace PP.rbrace PP.comma
-               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
+               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.</> d)
     , ppLst    = PP.list
     , ppCpy    = PP.dullwhite
     , ppIns    = \d -> PP.green (PP.char '+' PP.<> d)
