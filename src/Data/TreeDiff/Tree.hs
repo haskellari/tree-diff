@@ -2,12 +2,10 @@
 -- | Tree diffing working on @containers@ 'Tree'.
 module Data.TreeDiff.Tree (treeDiff, EditTree (..), Edit (..)) where
 
-import Data.Tree (Tree (..))
+import Data.Tree          (Tree (..))
 import Data.TreeDiff.List
 
-#ifdef __DOCTEST__
 import qualified Text.PrettyPrint as PP
-#endif
 
 -- | A breadth-traversal diff.
 --
@@ -68,7 +66,6 @@ data EditTree a
 treeToEdit :: Tree a -> EditTree a
 treeToEdit = go where go (Node x xs) = EditNode x (map (Cpy . go) xs)
 
-#ifdef __DOCTEST__
 ppTree :: (a -> PP.Doc) -> Tree a -> PP.Doc
 ppTree pp = ppT
   where
@@ -90,4 +87,3 @@ ppEditTree pp = PP.sep . ppEdit
     ppTree (EditNode x []) = pp x
     ppTree (EditNode x xs) = PP.parens $ PP.hang (pp x) 2 $
        PP.sep $ concatMap ppEdit xs
-#endif

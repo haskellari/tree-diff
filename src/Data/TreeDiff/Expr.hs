@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | This module uses 'Expr' for richer diffs than based on 'Tree'.
 module Data.TreeDiff.Expr (
     -- * Types
@@ -10,13 +11,18 @@ module Data.TreeDiff.Expr (
     exprDiff,
     -- * Pretty printing
     Pretty (..),
+    prettyPretty,
+    prettyExpr,
+    prettyEditExpr,
     ppExpr,
     ppEditExpr,
     ) where
 
-import Data.Map (Map)
+import Data.Map           (Map)
 import Data.TreeDiff.List
-import qualified Data.Map as Map
+
+import qualified Data.Map         as Map
+import qualified Text.PrettyPrint as PP
 
 type ConstructorName = String
 type FieldName       = String
@@ -78,35 +84,72 @@ data Pretty doc = Pretty
     , ppHang       :: doc -> doc -> doc
     }
 
+
 ppExpr :: Pretty doc -> Expr -> doc
-ppExpr p = impl where
-    impl (App x []) = ppCon p x
-    impl (App x xs) = ppParens p $ ppHang p (ppCon p x) $
-        ppSep p $ map impl xs
-    impl (Rec x xs) = ppHang p (ppCon p x) $ ppRec p $
+ppExpr p = ppExpr' p False
+
+ppExpr' :: forall doc. Pretty doc -> Bool -> Expr -> doc
+ppExpr' p = impl where
+    impl _ (App x []) = ppCon p x
+    impl b (App x xs) = ppParens' b $ ppHang p (ppCon p x) $
+        ppSep p $ map (impl True) xs
+    impl _ (Rec x xs) = ppHang p (ppCon p x) $ ppRec p $
         map ppField' $ Map.toList xs
-    impl (Lst xs)   = ppLst p (map impl xs)
+    impl _ (Lst xs)   = ppLst p (map (impl False) xs)
 
-    ppField' (n, e) = (n, impl e)
+    ppField' (n, e) = (n, impl False e)
 
-ppEditExpr :: Pretty doc -> Edit EditExpr -> doc
-ppEditExpr p = ppSep p . ppEdit
+    ppParens' :: Bool -> doc -> doc
+    ppParens' True  = ppParens p
+    ppParens' False = id
+
+ppEditExpr :: forall doc. Pretty doc -> Edit EditExpr -> doc
+ppEditExpr p = ppSep p . ppEdit False
   where
-    ppEdit (Cpy (EditExp expr)) = [ ppCpy p $ ppExpr p expr ]
-    ppEdit (Cpy expr) = [ ppEExpr expr ]
-    ppEdit (Ins expr) = [ ppIns p (ppEExpr expr) ]
-    ppEdit (Del expr) = [ ppDel p (ppEExpr expr) ]
-    ppEdit (Swp a b) =
-        [ ppDel p (ppEExpr a)
-        , ppIns p (ppEExpr b)
+    ppEdit :: Bool -> Edit EditExpr -> [doc]
+    ppEdit b (Cpy (EditExp expr)) = [ ppCpy p $ ppExpr' p b expr ]
+    ppEdit b (Cpy expr) = [ ppEExpr b expr ]
+    ppEdit b (Ins expr) = [ ppIns p (ppEExpr b expr) ]
+    ppEdit b (Del expr) = [ ppDel p (ppEExpr b expr) ]
+    ppEdit b (Swp x y) =
+        [ ppDel p (ppEExpr b x)
+        , ppIns p (ppEExpr b y)
         ]
 
-    ppEExpr (EditApp x []) = ppCon p x
-    ppEExpr (EditApp x xs) = ppParens p $ ppHang p (ppCon p x) $
-        ppSep p $ concatMap ppEdit xs
-    ppEExpr (EditRec x xs) = ppHang p (ppCon p x) $ ppRec p $
+    ppEExpr :: Bool -> EditExpr -> doc
+    ppEExpr _ (EditApp x []) = ppCon p x
+    ppEExpr b (EditApp x xs) = ppParens' b $ ppHang p (ppCon p x) $
+        ppSep p $ concatMap (ppEdit True) xs
+    ppEExpr _ (EditRec x xs) = ppHang p (ppCon p x) $ ppRec p $
         map ppField' $ Map.toList xs
-    ppEExpr (EditLst xs)   = ppLst p (concatMap ppEdit xs)
-    ppEExpr (EditExp x)    = ppExpr p x
+    ppEExpr _ (EditLst xs)   = ppLst p (concatMap (ppEdit False) xs)
+    ppEExpr b (EditExp x)    = ppExpr' p b x
 
-    ppField' (n, e) = (n, ppSep p $ ppEdit e)
+    ppField' (n, e) = (n, ppSep p $ ppEdit False e)
+
+    ppParens' :: Bool -> doc -> doc
+    ppParens' True  = ppParens p
+    ppParens' False = id
+
+-- | 'Pretty' via @pretty@ library.
+prettyPretty :: Pretty PP.Doc
+prettyPretty = Pretty
+    { ppCon    = PP.text
+    , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
+               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
+    , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
+    , ppCpy    = id
+    , ppIns    = \d -> PP.char '+' PP.<> d
+    , ppDel    = \d -> PP.char '-' PP.<> d
+    , ppSep    = PP.sep
+    , ppParens = PP.parens
+    , ppHang   = \d1 d2 -> PP.hang d1 2 d2
+    }
+
+-- | Pretty print 'Expr' using @pretty@.
+prettyExpr :: Expr -> PP.Doc
+prettyExpr = ppExpr prettyPretty
+
+-- | Pretty print @'Edit EditExpr'@ using @pretty@.
+prettyEditExpr :: Edit EditExpr -> PP.Doc
+prettyEditExpr = ppEditExpr prettyPretty

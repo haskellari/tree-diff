@@ -62,10 +62,10 @@ import Data.Scientific as Sci
 import Data.UUID.Types as UUID
 
 -- vector
-import qualified Data.Vector         as V
-import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector           as V
 import qualified Data.Vector.Primitive as VP
-import qualified Data.Vector.Storable as VS
+import qualified Data.Vector.Storable  as VS
+import qualified Data.Vector.Unboxed   as VU
 
 -- tagged
 import Data.Tagged (Tagged (..))
@@ -80,28 +80,23 @@ import qualified Data.HashSet        as HS
 -- aeson
 import qualified Data.Aeson as Aeson
 
--- doctest
-#ifdef __DOCTEST__
-import qualified Text.PrettyPrint as PP
-#endif
-
 -- | Difference between two 'ToExpr' values.
 --
 -- >>> let x = (1, Just 2) :: (Int, Maybe Int)
 -- >>> let y = (1, Nothing)
--- >>> ppEditExpr prettyP (ediff x y)
--- ((,) 1 -(Just 2) +Nothing)
+-- >>> prettyEditExpr (ediff x y)
+-- (,) 1 -(Just 2) +Nothing
 --
--- >>> data Foo = Foo { fooInt :: Int, fooBool :: [Bool], fooString :: String } deriving (Eq, Generic)
+-- >>> data Foo = Foo { fooInt :: Either Char Int, fooBool :: [Maybe Bool], fooString :: String } deriving (Eq, Generic)
 -- >>> instance ToExpr Foo
 --
--- >>> ppEditExpr prettyP $ ediff (Foo 2 [True] "fo") (Foo 3 [True] "fo")
--- Foo {fooBool = [True], fooInt = -2 +3, fooString = "fo"}
+-- >>> prettyEditExpr $ ediff (Foo (Right 2) [Just True] "fo") (Foo (Right 3) [Just True] "fo")
+-- Foo {fooBool = [Just True], fooInt = Right -2 +3, fooString = "fo"}
 --
--- >>> ppEditExpr prettyP $ ediff (Foo 42 [True, False] "old") (Foo 42 [False, False, True] "new")
+-- >>> prettyEditExpr $ ediff (Foo (Right 42) [Just True, Just False] "old") (Foo (Right 42) [Nothing, Just False, Just True] "new")
 -- Foo
---   {fooBool = [-True, +False, False, +True],
---    fooInt = 42,
+--   {fooBool = [-Just True, +Nothing, Just False, +Just True],
+--    fooInt = Right 42,
 --    fooString = -"old" +"new"}
 --
 ediff :: (ToExpr a, Eq a) => a -> a -> Edit EditExpr
@@ -212,13 +207,13 @@ instance (ToExpr a, ToExpr b, ToExpr c, ToExpr d, ToExpr e) => ToExpr (a, b, c, 
     toExpr (a, b, c, d, e) = App "(,,,,)" [toExpr a, toExpr b, toExpr c, toExpr d, toExpr e]
 
 -- | >>> prettyExpr $ toExpr (3 % 12 :: Rational)
--- (% 1 4)
+-- % 1 4
 instance (ToExpr a, Integral a) => ToExpr (Ratio.Ratio a) where
     toExpr r = App "%" [ toExpr $ Ratio.numerator r, toExpr $ Ratio.denominator r ]
 instance HasResolution a => ToExpr (Fixed a) where toExpr = defaultExprViaShow
 
 -- | >>> prettyExpr $ toExpr $ Identity 'a'
--- (Identity 'a')
+-- Identity 'a'
 instance ToExpr a => ToExpr (Identity a) where
     toExpr (Identity x) = App "Identity" [toExpr x]
 
@@ -280,7 +275,7 @@ instance ToExpr T.Text where
 -------------------------------------------------------------------------------
 
 -- | >>> prettyExpr $ toExpr $ ModifiedJulianDay 58014
--- (Day "2017-09-18")
+-- Day "2017-09-18"
 instance ToExpr Time.Day where
     toExpr d = App "Day" [ toExpr (show d) ]
 
@@ -302,7 +297,7 @@ instance ToExpr BS8.ByteString where
 -------------------------------------------------------------------------------
 
 -- | >>> prettyExpr $ toExpr (123.456 :: Scientific)
--- (scientific 123456 -3)
+-- scientific 123456 -3
 instance ToExpr Sci.Scientific where
     toExpr s = App "scientific" [ toExpr $ Sci.coefficient s, toExpr $ Sci.base10Exponent s ]
 
@@ -311,7 +306,7 @@ instance ToExpr Sci.Scientific where
 -------------------------------------------------------------------------------
 
 -- | >>> prettyExpr $ toExpr UUID.nil
--- (UUID "00000000-0000-0000-0000-000000000000")
+-- UUID "00000000-0000-0000-0000-000000000000"
 instance ToExpr UUID.UUID where
     toExpr u = App "UUID" [ toExpr $ toString u ]
 
@@ -361,27 +356,8 @@ instance ToExpr Aeson.Value
 -- Doctest
 -------------------------------------------------------------------------------
 
-#ifdef __DOCTEST__
-prettyP :: Pretty PP.Doc
-prettyP = Pretty
-    { ppCon    = PP.text
-    , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
-               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
-    , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
-    , ppCpy    = id
-    , ppIns    = \d -> PP.char '+' PP.<> d
-    , ppDel    = \d -> PP.char '-' PP.<> d
-    , ppSep    = PP.sep
-    , ppParens = PP.parens
-    , ppHang   = \d1 d2 -> PP.hang d1 2 d2
-    }
-
-prettyExpr :: Expr -> PP.Doc
-prettyExpr = ppExpr prettyP
-
 -- $setup
 -- >>> :set -XDeriveGeneric
 -- >>> import Data.Ratio ((%))
 -- >>> import Data.Time (Day (..))
 -- >>> import Data.Scientific (Scientific)
-#endif
