@@ -35,19 +35,19 @@ import qualified Text.PrettyPrint as PP
 -- >>> let x = (1, Just 2) :: (Int, Maybe Int)
 -- >>> let y = (1, Nothing)
 -- >>> ppEditExpr prettyP (ediff x y)
--- ((,) 1 +(Just 2) -Nothing)
+-- ((,) 1 -(Just 2) +Nothing)
 --
 -- >>> data Foo = Foo { fooInt :: Int, fooBool :: [Bool], fooString :: String } deriving (Eq, Generic)
 -- >>> instance ToExpr Foo
 --
 -- >>> ppEditExpr prettyP $ ediff (Foo 2 [True] "fo") (Foo 3 [True] "fo")
--- Foo {fooBool = [True], fooInt = +2 -3, fooString = "fo"}
+-- Foo {fooBool = [True], fooInt = -2 +3, fooString = "fo"}
 --
 -- >>> ppEditExpr prettyP $ ediff (Foo 42 [True, False] "old") (Foo 42 [False, False, True] "new")
 -- Foo
---   {fooBool = [+True -False False +True],
+--   {fooBool = [-True +False False +True],
 --    fooInt = 42,
---    fooString = +"old" -"new"}
+--    fooString = -"old" +"new"}
 --
 ediff :: (ToExpr a, Eq a) => a -> a -> Edit EditExpr
 ediff x y = exprDiff (toExpr x) (toExpr y)
