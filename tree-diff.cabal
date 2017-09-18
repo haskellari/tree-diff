@@ -24,7 +24,7 @@ description:
   @
   >>> pretty $ ediff (Foo 42 [True, False] "old") (Foo 42 [False, False, True] "new")
   Foo
-    {fooBool = [-True +False False +True],
+    {fooBool = [-True, +False, False, +True],
      fooInt = 42,
      fooString = -"old" +"new"}
   @

@@ -45,7 +45,7 @@ import qualified Text.PrettyPrint as PP
 --
 -- >>> ppEditExpr prettyP $ ediff (Foo 42 [True, False] "old") (Foo 42 [False, False, True] "new")
 -- Foo
---   {fooBool = [-True +False False +True],
+--   {fooBool = [-True, +False, False, +True],
 --    fooInt = 42,
 --    fooString = -"old" +"new"}
 --
@@ -126,7 +126,7 @@ prettyP = Pretty
     { ppCon    = PP.text
     , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
                . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
-    , ppLst    = PP.brackets . PP.sep
+    , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
     , ppIns    = \d -> PP.char '+' PP.<> d
     , ppDel    = \d -> PP.char '-' PP.<> d
     , ppSep    = PP.sep
