@@ -1,8 +1,10 @@
 # tree-diff
 
-## Example:
+## Examples
 
 ![](https://raw.githubusercontent.com/phadej/tree-diff/master/cabal-diff.png)
+
+![](https://raw.githubusercontent.com/phadej/tree-diff/master/cabal-diff-2.png)
 
 ## Pretty-printing
 
@@ -15,6 +17,7 @@ prettyP = Pretty
     , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
                . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
     , ppLst    = PP.brackets . PP.punctuate PP.comma . PP.sep
+    . ppCpy    = id
     , ppIns    = \d -> PP.char '+' PP.<> d
     , ppDel    = \d -> PP.char '-' PP.<> d
     , ppSep    = PP.sep
@@ -32,6 +35,7 @@ prettyP = Pretty
     , ppRec    = PP.encloseSep PP.lbrace PP.rbrace PP.comma
                . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
     , ppLst    = PP.list
+    , ppCpy    = PP.dullwhite
     , ppIns    = \d -> PP.green (PP.char '+' PP.<> d)
     , ppDel    = \d -> PP.red (PP.char '-' PP.<> d)
     , ppSep    = PP.sep

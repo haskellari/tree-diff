@@ -100,7 +100,10 @@ instance ToExpr Bool where toExpr = defaultExprViaShow
 
 instance ToExpr Char where
     toExpr = defaultExprViaShow
-    listToExpr = defaultExprViaShow
+    listToExpr s = case lines s of
+        []  -> App "\"\"" []
+        [l] -> defaultExprViaShow l
+        ls  -> App "unlines" [Lst (map defaultExprViaShow ls)]
 
 instance ToExpr a => ToExpr (Maybe a) where
     toExpr Nothing  = App "Nothing" []
@@ -127,6 +130,7 @@ prettyP = Pretty
     , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
                . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
     , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
+    , ppCpy    = id
     , ppIns    = \d -> PP.char '+' PP.<> d
     , ppDel    = \d -> PP.char '-' PP.<> d
     , ppSep    = PP.sep
