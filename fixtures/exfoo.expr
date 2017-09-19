@@ -1,0 +1,4 @@
+Foo
+  {fooBar = [Just "pub", Just (unlines ["night", "club"])],
+   fooInt = 42,
+   fooQuu = _×_ 125.375 Proxy}

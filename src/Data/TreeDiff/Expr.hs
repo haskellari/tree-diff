@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 -- | This module uses 'Expr' for richer diffs than based on 'Tree'.
 module Data.TreeDiff.Expr (
     -- * Types
@@ -7,22 +6,17 @@ module Data.TreeDiff.Expr (
     FieldName,
     EditExpr (..),
     Edit (..),
-    -- * Functions
     exprDiff,
-    -- * Pretty printing
-    Pretty (..),
-    prettyPretty,
-    prettyExpr,
-    prettyEditExpr,
-    ppExpr,
-    ppEditExpr,
     ) where
+
+import Prelude ()
+import Prelude.Compat
 
 import Data.Map           (Map)
 import Data.TreeDiff.List
 
-import qualified Data.Map         as Map
-import qualified Text.PrettyPrint as PP
+import qualified Data.Map        as Map
+import qualified Test.QuickCheck as QC
 
 type ConstructorName = String
 type FieldName       = String
@@ -33,6 +27,37 @@ data Expr
     | Rec ConstructorName (Map FieldName Expr)
     | Lst [Expr]
   deriving (Eq, Show)
+
+instance QC.Arbitrary Expr where
+    arbitrary = QC.scale (min 25) $ QC.sized arb where
+        arb n | n <= 0 = QC.oneof
+            [ (`App` []) <$> arbName
+            ,  (`Rec` mempty) <$> arbName
+            ]
+        arb n | otherwise = do
+            n' <- QC.choose (0, n `div` 3)
+            QC.oneof
+                [ App <$> arbName <*> QC.liftArbitrary (arb n')
+                , Rec <$> arbName <*> QC.liftArbitrary (arb n')
+                , Lst <$> QC.liftArbitrary (arb n')
+                ]
+
+    shrink (Lst es)   = es
+        ++ [ Lst es'    | es' <- QC.shrink es ]
+    shrink (Rec n fs) = Map.elems fs
+        ++ [ Rec n' fs  | n'  <- QC.shrink n  ] 
+        ++ [ Rec n  fs' | fs' <- QC.shrink fs ]
+    shrink (App n es) = es
+        ++ [ App n' es  | n'  <- QC.shrink n  ]
+        ++ [ App n  es' | es' <- QC.shrink es ]
+
+arbName :: QC.Gen String
+arbName = QC.frequency
+    [ (10, QC.liftArbitrary $ QC.elements $ ['a'..'z'] ++ ['0' .. '9'] ++ "+-_:")
+    , (1, show <$> (QC.arbitrary :: QC.Gen String))
+    , (1, QC.arbitrary)
+    , (1, QC.elements ["_×_", "_×_×_", "_×_×_×_"])
+    ]
 
 -- | Diff two 'Expr'.
 --
@@ -50,8 +75,8 @@ exprDiff = impl
         | otherwise = Swp (EditExp ea) (EditExp eb)
       where
         inter = Map.intersectionWith exprDiff as bs
-        onlyA = fmap (Cpy . EditExp) (Map.difference as inter)
-        onlyB = fmap (Cpy . EditExp) (Map.difference bs inter)
+        onlyA = fmap (Del . EditExp) (Map.difference as inter)
+        onlyB = fmap (Ins . EditExp) (Map.difference bs inter)
     impl (Lst as) (Lst bs) =
         Cpy $ EditLst (map recurse (diffBy (==) as bs))
 
@@ -69,87 +94,3 @@ data EditExpr
     | EditLst [Edit EditExpr]
     | EditExp Expr  -- ^ unchanged tree
   deriving Show
-
--- | Because we don't want to commit to single pretty printing library,
--- we use explicit dictionary.
-data Pretty doc = Pretty
-    { ppCon        :: ConstructorName -> doc
-    , ppRec        :: [(FieldName, doc)] -> doc
-    , ppLst        :: [doc] -> doc
-    , ppCpy        :: doc -> doc
-    , ppIns        :: doc -> doc
-    , ppDel        :: doc -> doc
-    , ppSep        :: [doc] -> doc
-    , ppParens     :: doc -> doc
-    , ppHang       :: doc -> doc -> doc
-    }
-
-
-ppExpr :: Pretty doc -> Expr -> doc
-ppExpr p = ppExpr' p False
-
-ppExpr' :: forall doc. Pretty doc -> Bool -> Expr -> doc
-ppExpr' p = impl where
-    impl _ (App x []) = ppCon p x
-    impl b (App x xs) = ppParens' b $ ppHang p (ppCon p x) $
-        ppSep p $ map (impl True) xs
-    impl _ (Rec x xs) = ppHang p (ppCon p x) $ ppRec p $
-        map ppField' $ Map.toList xs
-    impl _ (Lst xs)   = ppLst p (map (impl False) xs)
-
-    ppField' (n, e) = (n, impl False e)
-
-    ppParens' :: Bool -> doc -> doc
-    ppParens' True  = ppParens p
-    ppParens' False = id
-
-ppEditExpr :: forall doc. Pretty doc -> Edit EditExpr -> doc
-ppEditExpr p = ppSep p . ppEdit False
-  where
-    ppEdit :: Bool -> Edit EditExpr -> [doc]
-    ppEdit b (Cpy (EditExp expr)) = [ ppCpy p $ ppExpr' p b expr ]
-    ppEdit b (Cpy expr) = [ ppEExpr b expr ]
-    ppEdit b (Ins expr) = [ ppIns p (ppEExpr b expr) ]
-    ppEdit b (Del expr) = [ ppDel p (ppEExpr b expr) ]
-    ppEdit b (Swp x y) =
-        [ ppDel p (ppEExpr b x)
-        , ppIns p (ppEExpr b y)
-        ]
-
-    ppEExpr :: Bool -> EditExpr -> doc
-    ppEExpr _ (EditApp x []) = ppCon p x
-    ppEExpr b (EditApp x xs) = ppParens' b $ ppHang p (ppCon p x) $
-        ppSep p $ concatMap (ppEdit True) xs
-    ppEExpr _ (EditRec x xs) = ppHang p (ppCon p x) $ ppRec p $
-        map ppField' $ Map.toList xs
-    ppEExpr _ (EditLst xs)   = ppLst p (concatMap (ppEdit False) xs)
-    ppEExpr b (EditExp x)    = ppExpr' p b x
-
-    ppField' (n, e) = (n, ppSep p $ ppEdit False e)
-
-    ppParens' :: Bool -> doc -> doc
-    ppParens' True  = ppParens p
-    ppParens' False = id
-
--- | 'Pretty' via @pretty@ library.
-prettyPretty :: Pretty PP.Doc
-prettyPretty = Pretty
-    { ppCon    = PP.text
-    , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
-               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
-    , ppLst    = PP.brackets . PP.sep . PP.punctuate PP.comma
-    , ppCpy    = id
-    , ppIns    = \d -> PP.char '+' PP.<> d
-    , ppDel    = \d -> PP.char '-' PP.<> d
-    , ppSep    = PP.sep
-    , ppParens = PP.parens
-    , ppHang   = \d1 d2 -> PP.hang d1 2 d2
-    }
-
--- | Pretty print 'Expr' using @pretty@.
-prettyExpr :: Expr -> PP.Doc
-prettyExpr = ppExpr prettyPretty
-
--- | Pretty print @'Edit EditExpr'@ using @pretty@.
-prettyEditExpr :: Edit EditExpr -> PP.Doc
-prettyEditExpr = ppEditExpr prettyPretty
