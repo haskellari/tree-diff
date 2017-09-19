@@ -197,6 +197,12 @@ instance ToExpr (Proxy a) where toExpr = defaultExprViaShow
 -- >>> prettyExpr $ toExpr "Hello world"
 -- "Hello world"
 --
+-- >>> prettyExpr $ toExpr "Hello\nworld"
+-- unlines ["Hello", "world"]
+--
+-- >>> prettyExpr $ toExpr "\n"
+-- "\n"
+--
 instance ToExpr Char where
     toExpr = defaultExprViaShow
     listToExpr = stringToExpr "unlines" lines
@@ -204,7 +210,7 @@ instance ToExpr Char where
 stringToExpr :: Show a => String -> (a -> [a]) -> a -> Expr
 stringToExpr unlines_ lines_ s = case lines_ s of
     []  -> App (show s) []
-    [l] -> defaultExprViaShow l
+    [_] -> defaultExprViaShow s
     ls  -> App unlines_ [Lst (map defaultExprViaShow ls)]
 
 instance ToExpr a => ToExpr (Maybe a) where
