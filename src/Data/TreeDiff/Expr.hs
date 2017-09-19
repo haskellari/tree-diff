@@ -18,8 +18,6 @@ import Data.TreeDiff.List
 import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
 
-import Debug.Trace
-
 type ConstructorName = String
 type FieldName       = String
 
@@ -31,21 +29,34 @@ data Expr
   deriving (Eq, Show)
 
 instance QC.Arbitrary Expr where
-    arbitrary = QC.sized arb where
-        arb n | traceShowId n <= 0 = QC.oneof
+    arbitrary = QC.scale (min 25) $ QC.sized arb where
+        arb n | n <= 0 = QC.oneof
             [ (`App` []) <$> arbName
             ,  (`Rec` mempty) <$> arbName
             ]
-        arb n | otherwise = QC.oneof
-            [ App <$> arbName <*> QC.liftArbitrary (arb $ n `div` 3)
-            , Rec <$> arbName <*> QC.liftArbitrary (arb $ n `div` 3)
-            , Lst <$> QC.liftArbitrary (arb $ n `div` 3)
-            ]
+        arb n | otherwise = do
+            n' <- QC.choose (0, n `div` 3)
+            QC.oneof
+                [ App <$> arbName <*> QC.liftArbitrary (arb n')
+                , Rec <$> arbName <*> QC.liftArbitrary (arb n')
+                , Lst <$> QC.liftArbitrary (arb n')
+                ]
+
+    shrink (Lst es)   = es
+        ++ [ Lst es'    | es' <- QC.shrink es ]
+    shrink (Rec n fs) = Map.elems fs
+        ++ [ Rec n' fs  | n'  <- QC.shrink n  ] 
+        ++ [ Rec n  fs' | fs' <- QC.shrink fs ]
+    shrink (App n es) = es
+        ++ [ App n' es  | n'  <- QC.shrink n  ]
+        ++ [ App n  es' | es' <- QC.shrink es ]
 
 arbName :: QC.Gen String
 arbName = QC.frequency
     [ (10, QC.liftArbitrary $ QC.elements $ ['a'..'z'] ++ ['0' .. '9'] ++ "+-_:")
+    , (1, show <$> (QC.arbitrary :: QC.Gen String))
     , (1, QC.arbitrary)
+    , (1, QC.elements ["_×_", "_×_×_", "_×_×_×_"])
     ]
 
 -- | Diff two 'Expr'.
@@ -64,8 +75,8 @@ exprDiff = impl
         | otherwise = Swp (EditExp ea) (EditExp eb)
       where
         inter = Map.intersectionWith exprDiff as bs
-        onlyA = fmap (Cpy . EditExp) (Map.difference as inter)
-        onlyB = fmap (Cpy . EditExp) (Map.difference bs inter)
+        onlyA = fmap (Del . EditExp) (Map.difference as inter)
+        onlyB = fmap (Ins . EditExp) (Map.difference bs inter)
     impl (Lst as) (Lst bs) =
         Cpy $ EditLst (map recurse (diffBy (==) as bs))
 

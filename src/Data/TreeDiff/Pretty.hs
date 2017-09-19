@@ -11,6 +11,10 @@ module Data.TreeDiff.Pretty (
     ansiWlPretty,
     ansiWlExpr,
     ansiWlEditExpr,
+    -- ** background
+    ansiWlBgPretty,
+    ansiWlBgExpr,
+    ansiWlBgEditExpr,
     -- * Utilities
     escapeName,
     ) where
@@ -43,8 +47,8 @@ data Pretty doc = Pretty
 -- >>> putStrLn $ escapeName "Foo"
 -- Foo
 --
--- >>> putStrLn $ escapeName "_,_"
--- _,_
+-- >>> putStrLn $ escapeName "_×_"
+-- _×_
 --
 -- >>> putStrLn $ escapeName "-3"
 -- `-3`
@@ -58,12 +62,18 @@ data Pretty doc = Pretty
 -- >>> putStrLn $ escapeName $ show "looks like a string"
 -- "looks like a string"
 --
+-- >>> putStrLn $ escapeName "[]"
+-- `[]`
+--
+-- >>> putStrLn $ escapeName "_,_"
+-- `_,_`
+--
 escapeName :: String -> String
 escapeName n
-    | null n                     = "``"
-    | isValidString n            = n
-    | all valid n && headNotMP n = n
-    | otherwise                  = "`" ++ concatMap e n ++ "`"
+    | null n                      = "``"
+    | isValidString n             = n
+    | all valid' n && headNotMP n = n
+    | otherwise                   = "`" ++ concatMap e n ++ "`"
   where
     e '`'               = "\\`"
     e '\\'              = "\\\\"
@@ -71,16 +81,17 @@ escapeName n
     e c | not (valid c) = "\\x" ++ showHex (ord c) ";"
     e c                 = [c]
 
-    valid c = (isAlphaNum c || isSymbol c || isPunctuation c)
-        && c `notElem` "[](){}`"
+    valid c = isAlphaNum c || isSymbol c || isPunctuation c
+    valid' c = valid c && c `notElem` "[](){}`\","
 
     headNotMP ('-' : _) = False
     headNotMP ('+' : _) = False
     headNotMP _         = True
 
-    isValidString s = case readMaybe s :: Maybe String of
+    isValidString s@('"':_) = case readMaybe s :: Maybe String of
         Just _ -> True
         Nothing -> False
+    isValidString _         = False
 
 ppExpr :: Pretty doc -> Expr -> doc
 ppExpr p = ppExpr' p False
@@ -144,6 +155,9 @@ prettyPretty = Pretty
     }
 
 -- | Pretty print 'Expr' using @pretty@.
+--
+-- >>> prettyExpr $ Rec "ex" (Map.fromList [("[]", App "bar" [])])
+-- ex {`[]` = bar}
 prettyExpr :: Expr -> HJ.Doc
 prettyExpr = ppExpr prettyPretty
 
@@ -162,8 +176,8 @@ ansiWlPretty = Pretty
                . map (\(fn, d) -> WL.text fn WL.<+> WL.equals WL.</> d)
     , ppLst    = WL.list
     , ppCpy    = WL.dullwhite
-    , ppIns    = \d -> WL.green (WL.char '+' WL.<> d)
-    , ppDel    = \d -> WL.red (WL.char '-' WL.<> d)
+    , ppIns    = \d -> WL.green $ WL.plain $ WL.char '+' WL.<> d
+    , ppDel    = \d -> WL.red   $ WL.plain $ WL.char '-' WL.<> d
     , ppSep    = WL.sep
     , ppParens = WL.parens
     , ppHang   = \d1 d2 -> WL.hang 2 (d1 WL.</> d2)
@@ -176,3 +190,22 @@ ansiWlExpr = ppExpr ansiWlPretty
 -- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
 ansiWlEditExpr :: Edit EditExpr -> WL.Doc
 ansiWlEditExpr = ppEditExpr ansiWlPretty
+
+-------------------------------------------------------------------------------
+-- Background
+-------------------------------------------------------------------------------
+
+-- | Like 'ansiWlPretty' but color the background.
+ansiWlBgPretty :: Pretty WL.Doc
+ansiWlBgPretty = ansiWlPretty
+    { ppIns    = \d -> WL.ondullgreen $ WL.white $ WL.plain $ WL.char '+' WL.<> d
+    , ppDel    = \d -> WL.ondullred   $ WL.white $ WL.plain $ WL.char '-' WL.<> d
+    } 
+
+-- | Pretty print 'Expr' using @ansi-wl-pprint@.
+ansiWlBgExpr :: Expr -> WL.Doc
+ansiWlBgExpr = ppExpr ansiWlBgPretty
+
+-- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
+ansiWlBgEditExpr :: Edit EditExpr -> WL.Doc
+ansiWlBgEditExpr = ppEditExpr ansiWlBgPretty

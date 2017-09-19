@@ -89,7 +89,7 @@ import qualified Data.Aeson as Aeson
 -- >>> let x = (1, Just 2) :: (Int, Maybe Int)
 -- >>> let y = (1, Nothing)
 -- >>> prettyEditExpr (ediff x y)
--- _,_ 1 -(Just 2) +Nothing
+-- _×_ 1 -(Just 2) +Nothing
 --
 -- >>> data Foo = Foo { fooInt :: Either Char Int, fooBool :: [Maybe Bool], fooString :: String } deriving (Eq, Generic)
 -- >>> instance ToExpr Foo
@@ -119,7 +119,7 @@ ediff' x y = exprDiff (toExpr x) (toExpr y)
 -- |
 --
 -- >>> toExpr ((1, Just 2) :: (Int, Maybe Int))
--- App "_,_" [App "1" [],App "Just" [App "2" []]]
+-- App "_\215_" [App "1" [],App "Just" [App "2" []]]
 --
 class ToExpr a where
     toExpr :: a -> Expr
@@ -219,13 +219,13 @@ instance ToExpr a => ToExpr [a] where
     toExpr = listToExpr
 
 instance (ToExpr a, ToExpr b) => ToExpr (a, b) where
-    toExpr (a, b) = App "_,_" [toExpr a, toExpr b]
+    toExpr (a, b) = App "_×_" [toExpr a, toExpr b]
 instance (ToExpr a, ToExpr b, ToExpr c) => ToExpr (a, b, c) where
-    toExpr (a, b, c) = App "_,_,_" [toExpr a, toExpr b, toExpr c]
+    toExpr (a, b, c) = App "_×_×_" [toExpr a, toExpr b, toExpr c]
 instance (ToExpr a, ToExpr b, ToExpr c, ToExpr d) => ToExpr (a, b, c, d) where
-    toExpr (a, b, c, d) = App "_,_,_,_" [toExpr a, toExpr b, toExpr c, toExpr d]
+    toExpr (a, b, c, d) = App "_×_×_×_" [toExpr a, toExpr b, toExpr c, toExpr d]
 instance (ToExpr a, ToExpr b, ToExpr c, ToExpr d, ToExpr e) => ToExpr (a, b, c, d, e) where
-    toExpr (a, b, c, d, e) = App "_,_,_,_,_" [toExpr a, toExpr b, toExpr c, toExpr d, toExpr e]
+    toExpr (a, b, c, d, e) = App "_×_×_×_×_" [toExpr a, toExpr b, toExpr c, toExpr d, toExpr e]
 
 -- | >>> prettyExpr $ toExpr (3 % 12 :: Rational)
 -- _%_ 1 4
