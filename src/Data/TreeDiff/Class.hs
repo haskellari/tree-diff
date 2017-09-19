@@ -345,7 +345,7 @@ instance ToExpr a => ToExpr (Tagged t a) where
 -------------------------------------------------------------------------------
 
 instance ToExpr a => ToExpr (Hashed a) where
-    toExpr x = App "hashsed" [ toExpr $ unhashed x ]
+    toExpr x = App "hashed" [ toExpr $ unhashed x ]
 
 -------------------------------------------------------------------------------
 -- unordered-containers
