@@ -115,3 +115,14 @@ test-suite doctests
   ghc-options:         -Wall -threaded
   hs-source-dirs:      tests
   default-language:    Haskell2010
+
+test-suite test
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  main-is:             Tests.hs
+  hs-source-dirs:      tests
+  ghc-options:         -Wall -threaded
+  build-depends:
+    base, tree-diff,
+    tasty,
+    tasty-quickcheck
