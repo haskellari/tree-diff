@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Data.TreeDiff.Class (
     ediff,
+    ediff',
     ToExpr (..),
     defaultExprViaShow,
     -- * SOP
@@ -102,8 +103,18 @@ import qualified Data.Aeson as Aeson
 --    fooInt = Right 42,
 --    fooString = -"old" +"new"}
 --
-ediff :: (ToExpr a, Eq a) => a -> a -> Edit EditExpr
+ediff :: ToExpr a => a -> a -> Edit EditExpr
 ediff x y = exprDiff (toExpr x) (toExpr y)
+
+-- | Compare different types.
+--
+-- /Note:/ Use with care as you can end up comparing apples with oranges.
+--
+-- >>> prettyEditExpr $ ediff' ["foo", "bar"] [Just "foo", Nothing]
+-- [-"foo", +Just "foo", -"bar", +Nothing]
+--
+ediff' :: (ToExpr a, ToExpr b) => a -> b -> Edit EditExpr
+ediff' x y = exprDiff (toExpr x) (toExpr y)
 
 -- |
 --
