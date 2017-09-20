@@ -1,4 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+-- | Utilities to parse 'Expr'.
+--
+-- /Note:/ we don't parse diffs.
 module Data.TreeDiff.Parser (
     exprParser
     ) where
@@ -17,6 +20,10 @@ import Data.TreeDiff.Expr
 
 import qualified Data.Map as Map
 
+-- | Parsers for 'Expr' using @parsers@ type-classes.
+--
+-- You can use this with your parser-combinator library of choice:
+-- @parsec@, @attoparsec@, @trifecta@...
 exprParser :: (Monad m, TokenParsing m) => m Expr
 exprParser = apprecP <|> lstP
 

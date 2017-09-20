@@ -18,14 +18,19 @@ import Data.TreeDiff.List
 import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
 
+-- | Constructor name is a string
 type ConstructorName = String
+--
+-- | Record field name is a string too.
 type FieldName       = String
 
--- | An expression tree.
+-- | A untyped Haskell-like expression.
+--
+-- Having richer structure than just 'Tree' allows to have richer diffs.
 data Expr
-    = App ConstructorName [Expr]
-    | Rec ConstructorName (Map FieldName Expr)
-    | Lst [Expr]
+    = App ConstructorName [Expr]                 -- ^ application
+    | Rec ConstructorName (Map FieldName Expr)   -- ^ record constructor
+    | Lst [Expr]                                 -- ^ list constructor
   deriving (Eq, Show)
 
 instance QC.Arbitrary Expr where
@@ -88,6 +93,7 @@ exprDiff = impl
     recurse (Cpy z)   = Cpy (EditExp z)
     recurse (Swp x y) = impl x y
 
+-- | Type used in the result of 'ediff'.
 data EditExpr
     = EditApp ConstructorName [Edit EditExpr]
     | EditRec ConstructorName (Map FieldName (Edit EditExpr))

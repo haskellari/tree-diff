@@ -1,3 +1,4 @@
+-- | Utilities to pretty print 'Expr' and 'EditExpr'
 module Data.TreeDiff.Pretty (
     -- * Explicit dictionary
     Pretty (..),
@@ -93,6 +94,7 @@ escapeName n
         Nothing -> False
     isValidString _         = False
 
+-- | Pretty print an 'Expr' using explicit pretty-printing dictionary.
 ppExpr :: Pretty doc -> Expr -> doc
 ppExpr p = ppExpr' p False
 
@@ -110,6 +112,7 @@ ppExpr' p = impl where
     ppParens' True  = ppParens p
     ppParens' False = id
 
+-- | Pretty print an @'Edit' 'EditExpr'@ using explicit pretty-printing dictionary.
 ppEditExpr :: Pretty doc -> Edit EditExpr -> doc
 ppEditExpr p = ppSep p . ppEdit False
   where
@@ -169,6 +172,7 @@ prettyEditExpr = ppEditExpr prettyPretty
 -- ansi-wl-pprint
 -------------------------------------------------------------------------------
 
+-- | 'Pretty' via @ansi-wl-pprint@ library (with colors).
 ansiWlPretty :: Pretty WL.Doc
 ansiWlPretty = Pretty
     { ppCon    = WL.text

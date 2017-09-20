@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+-- | A list diff.
 module Data.TreeDiff.List (diffBy, Edit (..)) where
 
 import Data.List.Compat (sortOn)
@@ -6,11 +7,14 @@ import qualified Data.MemoTrie as M
 import qualified Data.Vector as V
 
 -- | List edit operations
+--
+-- The 'Swp' constructor is redundant, but it let us spot
+-- a recursion point when performing tree diffs.
 data Edit a
     = Ins a    -- ^ insert
     | Del a    -- ^ delete
     | Cpy a    -- ^ copy unchanged
-    | Swp a a  -- ^ swap
+    | Swp a a  -- ^ swap, i.e. delete + insert
   deriving Show
 
 -- | List difference.
@@ -23,6 +27,9 @@ data Edit a
 --
 -- prop> \xs ys -> length (diffBy (==) xs ys) >= max (length xs) (length (ys :: String))
 -- prop> \xs ys -> length (diffBy (==) xs ys) <= length xs + length (ys :: String)
+--
+-- /Note:/ currently this has O(n*m) memory requirements, for the sake
+-- of more obviously correct implementation.
 --
 diffBy :: forall a. (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
 diffBy eq xs' ys' = reverse (snd (lcs (V.length xs) (V.length ys)))

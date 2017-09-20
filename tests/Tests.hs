@@ -64,8 +64,8 @@ roundtripPretty e = counterexample info $ ediffEq (Just e) res'
 --
 -- Then we create a golden test that verifies that version we got now,
 -- is the same we had previously. @tree-diff@ seralises the 'Expr',
--- not the original value. This is a design trade-off: 
--- as we can always deserialise we can better diff the values even the 
+-- not the original value. This is a design trade-off:
+-- as we can always deserialise we can better diff the values even the
 -- type is changed, e.g. the fields is added.
 data Foo = Foo
     { fooInt :: Int
@@ -86,4 +86,5 @@ exFoo = Foo
     }
 
 exFooTests :: TestTree
-exFooTests = ediffGolden goldenTest "golden exFoo" "fixtures/exfoo.expr" exFoo
+exFooTests = ediffGolden goldenTest "golden exFoo" "fixtures/exfoo.expr" $
+    return exFoo

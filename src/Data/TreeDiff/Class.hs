@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+-- | A 'ToExpr' class.
 module Data.TreeDiff.Class (
     ediff,
     ediff',
@@ -12,7 +13,6 @@ module Data.TreeDiff.Class (
     defaultExprViaShow,
     -- * SOP
     sopToExpr,
-    sopNPToExpr,
     ) where
 
 import Data.Foldable      (toList)
@@ -116,7 +116,8 @@ ediff x y = exprDiff (toExpr x) (toExpr y)
 ediff' :: (ToExpr a, ToExpr b) => a -> b -> Edit EditExpr
 ediff' x y = exprDiff (toExpr x) (toExpr y)
 
--- |
+-- | 'toExpr' converts a Haskell value into
+-- untyped Haskell-like syntax tree, 'Expr'.
 --
 -- >>> toExpr ((1, Just 2) :: (Int, Maybe Int))
 -- App "_\215_" [App "1" [],App "Just" [App "2" []]]
@@ -134,6 +135,8 @@ class ToExpr a where
 instance ToExpr Expr where
     toExpr = id
 
+-- | An alternative implementation for literal types. We use 'show'
+-- representation of them.
 defaultExprViaShow :: Show a => a -> Expr
 defaultExprViaShow x = App (show x) []
 

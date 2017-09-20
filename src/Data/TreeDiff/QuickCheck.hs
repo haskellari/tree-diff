@@ -1,3 +1,4 @@
+-- | @QuickCheck@ related utilities.
 module Data.TreeDiff.QuickCheck (
     ediffEq,
     ) where

@@ -61,6 +61,11 @@ treeDiff ta@(Node a as) tb@(Node b bs)
     rec (Cpy z)   = Cpy (treeToEdit z)
     rec (Swp x y) = treeDiff x y
 
+-- | Type used in the result of 'treeDiff'.
+--
+-- It's essentially a 'Tree', but the forest list is changed from
+-- @[tree a]@ to @['Edit' (tree a)]@. This highlights that
+-- 'treeDiff' performs a list diff on each tree level.
 data EditTree a
     = EditNode a [Edit (EditTree a)]
   deriving Show
