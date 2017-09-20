@@ -12,12 +12,16 @@ import Test.QuickCheck            (Property, counterexample)
 import Test.Tasty                 (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.QuickCheck      (testProperty)
-import Text.Trifecta              (eof, parseString)
-import Text.Trifecta.Result       (ErrInfo (..), Result (..))
+
+import qualified Text.Parsec                  as P
+import qualified Text.PrettyPrint.ANSI.Leijen as WL
+import qualified Text.Trifecta                as T (eof, parseString)
+import qualified Text.Trifecta.Result         as T (ErrInfo (..), Result (..))
 
 main :: IO ()
 main = defaultMain $ testGroup "tests"
-    [ testProperty "trifecta-pretty roundtrip" roundtripPretty
+    [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
+    , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
     , exFooTests
     ]
 
@@ -30,25 +34,43 @@ main = defaultMain $ testGroup "tests"
 -- We demonstrate the use of 'ediffEq'. We could used '===' there,
 -- but now the nice diff will be printed as well
 -- (as there is 'ToExpr Expr' instance).
-roundtripPretty :: Expr -> Property
-roundtripPretty e = counterexample info $ ediffEq (Just e) res'
+roundtripTrifectaPretty :: Expr -> Property
+roundtripTrifectaPretty e = counterexample info $ ediffEq (Just e) res'
   where
     doc = show (prettyExpr e)
-    res = parseString (exprParser <* eof) mempty doc
+    res = T.parseString (exprParser <* T.eof) mempty doc
 
     info = case res of
-        Success e'  ->
+        T.Success e'  ->
             doc
             ++ "\n" ++
             show e'
-        Failure err ->
+        T.Failure err ->
             doc
             ++ "\n" ++
-            show (_errDoc err)
+            show (T._errDoc err)
 
     res' = case res of
-        Success e' -> Just e'
-        Failure _  -> Nothing
+        T.Success e' -> Just e'
+        T.Failure _  -> Nothing
+
+roundtripParsecAnsiWl :: Expr -> Property
+roundtripParsecAnsiWl e = counterexample info $ ediffEq (Just e) res'
+  where
+    doc = show (WL.plain (ansiWlExpr e))
+    res = P.parse (exprParser <* P.eof) "<memory>" doc
+
+    info = case res of
+        Right e'  ->
+            doc
+            ++ "\n" ++
+            show e'
+        Left err ->
+            doc
+            ++ "\n" ++
+            show err
+
+    res' = either (const Nothing) Just res
 
 -------------------------------------------------------------------------------
 -- Golden

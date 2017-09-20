@@ -4,11 +4,11 @@ module Data.TreeDiff.Golden (
     ) where
 
 import Data.TreeDiff
-import System.Console.ANSI (SGR (Reset), setSGRCode)
 import Prelude ()
 import Prelude.Compat
-import Text.Trifecta              (eof, parseFromFileEx)
-import Text.Trifecta.Result       (ErrInfo (..), Result (..))
+import System.Console.ANSI (SGR (Reset), setSGRCode)
+import Text.Parsec         (eof, parse)
+import Text.Parsec.Text ()
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
@@ -31,7 +31,7 @@ import qualified Data.Text.IO as T
 -- and compare it with a 'toExpr' of a result. If values differ,
 -- the diff of two will be printed.
 --
--- See <https://github.com/phadej/tree-diff/blob/master/tests/Tests.hs> 
+-- See <https://github.com/phadej/tree-diff/blob/master/tests/Tests.hs>
 -- for a proper example.
 --
 ediffGolden
@@ -45,10 +45,10 @@ ediffGolden impl testName fp x = impl testName expect actual cmp wrt
   where
     actual = fmap toExpr x
     expect = do
-        result <- parseFromFileEx (exprParser <* eof) fp
-        case result of
-            Failure err -> print (_errDoc err) >> fail "parse error"
-            Success r   -> return r
+        contents <- T.readFile fp
+        case parse (exprParser <* eof) fp contents of
+            Left err -> print err >> fail "parse error"
+            Right r  -> return r
     cmp a b
         | a == b    = return $ Nothing
         | otherwise = return $ Just $
