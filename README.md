@@ -1,45 +1,17 @@
 # tree-diff
 
+Diffing of (expression) trees.
+
 ## Examples
 
-![](https://raw.githubusercontent.com/phadej/tree-diff/master/cabal-diff.png)
+`tree-diff` displays pretty diffs of tree data:
 
-![](https://raw.githubusercontent.com/phadej/tree-diff/master/cabal-diff-2.png)
+![](https://raw.githubusercontent.com/phadej/tree-diff/master/example1.png)
 
-## Pretty-printing
+Because of its untyped internal type, it copes with type changes:
 
-### pretty
+![](https://raw.githubusercontent.com/phadej/tree-diff/master/example2.png)
 
-```haskell
-prettyP :: Pretty PP.Doc
-prettyP = Pretty
-    { ppCon    = PP.text
-    , ppRec    = PP.braces . PP.sep . PP.punctuate PP.comma
-               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.<+> d)
-    , ppLst    = PP.brackets . PP.punctuate PP.comma . PP.sep
-    . ppCpy    = id
-    , ppIns    = \d -> PP.char '+' PP.<> d
-    , ppDel    = \d -> PP.char '-' PP.<> d
-    , ppSep    = PP.sep
-    , ppParens = PP.parens
-    , ppHang   = \d1 d2 -> PP.hang d1 2 d2
-    }
-```
+As a bonus, multiline `String`s and `Text` are diffed linewise:
 
-### ansi-wl-pprint
-
-```haskell
-prettyP :: Pretty PP.Doc
-prettyP = Pretty
-    { ppCon    = PP.text
-    , ppRec    = PP.encloseSep PP.lbrace PP.rbrace PP.comma
-               . map (\(fn, d) -> PP.text fn PP.<+> PP.equals PP.</> d)
-    , ppLst    = PP.list
-    , ppCpy    = PP.dullwhite
-    , ppIns    = \d -> PP.green (PP.char '+' PP.<> d)
-    , ppDel    = \d -> PP.red (PP.char '-' PP.<> d)
-    , ppSep    = PP.sep
-    , ppParens = PP.parens
-    , ppHang   = \d1 d2 -> PP.hang 2 (d1 PP.</> d2)
-    }
-```
+![](https://raw.githubusercontent.com/phadej/tree-diff/master/example3.png)
