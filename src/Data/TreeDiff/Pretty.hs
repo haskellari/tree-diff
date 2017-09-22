@@ -63,6 +63,9 @@ data Pretty doc = Pretty
 -- >>> putStrLn $ escapeName $ show "looks like a string"
 -- "looks like a string"
 --
+-- >>> putStrLn $ escapeName $ show "tricky" ++ "   "
+-- `"tricky"   `
+--
 -- >>> putStrLn $ escapeName "[]"
 -- `[]`
 --
@@ -89,9 +92,11 @@ escapeName n
     headNotMP ('+' : _) = False
     headNotMP _         = True
 
-    isValidString s@('"':_) = case readMaybe s :: Maybe String of
-        Just _ -> True
-        Nothing -> False
+    isValidString s
+        | length s >= 2 && head s == '"' && last s == '"' =
+            case readMaybe s :: Maybe String of
+                Just _ -> True
+                Nothing -> False
     isValidString _         = False
 
 -- | Pretty print an 'Expr' using explicit pretty-printing dictionary.
