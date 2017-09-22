@@ -18,6 +18,7 @@ module Data.TreeDiff.Class (
 import Data.Foldable      (toList)
 import Data.Proxy         (Proxy (..))
 import Data.TreeDiff.Expr
+import Data.List.Compat      (uncons)
 import Generics.SOP
        (All, All2, ConstructorInfo (..), DatatypeInfo (..), FieldInfo (..),
        I (..), K (..), NP (..), SOP (..), constructorInfo, hcliftA2, hcmap,
@@ -56,14 +57,14 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Time as Time
 
 -- bytestring
-import qualified Data.ByteString.Char8      as LBS8
-import qualified Data.ByteString.Lazy.Char8 as BS8
+import qualified Data.ByteString      as BS
+import qualified Data.ByteString.Lazy as LBS
 
 -- scientific
-import Data.Scientific as Sci
+import qualified Data.Scientific as Sci
 
 -- uuid-types
-import Data.UUID.Types as UUID
+import qualified Data.UUID.Types as UUID
 
 -- vector
 import qualified Data.Vector           as V
@@ -201,20 +202,47 @@ instance ToExpr (Proxy a) where toExpr = defaultExprViaShow
 -- "Hello world"
 --
 -- >>> prettyExpr $ toExpr "Hello\nworld"
--- unlines ["Hello", "world"]
+-- concat ["Hello\n", "world"]
 --
--- >>> prettyExpr $ toExpr "\n"
+-- >>> traverse_ (print . prettyExpr . toExpr) ["", "\n", "foo", "foo\n", "foo\nbar", "foo\nbar\n"]
+-- ""
 -- "\n"
+-- "foo"
+-- "foo\n"
+-- concat ["foo\n", "bar"]
+-- concat ["foo\n", "bar\n"]
 --
 instance ToExpr Char where
     toExpr = defaultExprViaShow
-    listToExpr = stringToExpr "unlines" lines
+    listToExpr = stringToExpr "concat" . unconcat uncons
 
-stringToExpr :: Show a => String -> (a -> [a]) -> a -> Expr
-stringToExpr unlines_ lines_ s = case lines_ s of
-    []  -> App (show s) []
-    [_] -> defaultExprViaShow s
-    ls  -> App unlines_ [Lst (map defaultExprViaShow ls)]
+stringToExpr
+    :: Show a
+    => String -- ^ name of concat
+    -> [a]
+    -> Expr
+stringToExpr _  []  = App "\"\"" []
+stringToExpr _  [l] = defaultExprViaShow l
+stringToExpr cn ls  = App cn [Lst (map defaultExprViaShow ls)]
+
+-- | Split on '\n'.
+--
+-- prop> \xs -> xs == concat (unconcat uncons xs)
+unconcat :: forall a. (a -> Maybe (Char, a)) -> a -> [String]
+unconcat uncons_ = go where
+    go :: a -> [String]
+    go xs = case span_ xs of
+        ~(ys, zs)
+            | null ys   -> []
+            | otherwise -> ys : go zs
+
+    span_ :: a -> (String, a)
+    span_ xs = case uncons_ xs of
+        Nothing         -> ("", xs)
+        Just ~(x, xs')
+            | x == '\n' -> ("\n", xs')
+            | otherwise -> case span_ xs' of
+            ~(ys, zs) -> (x : ys, zs)
 
 instance ToExpr a => ToExpr (Maybe a) where
     toExpr Nothing  = App "Nothing" []
@@ -294,11 +322,25 @@ instance (ToExpr v) => ToExpr (Seq.Seq v) where
 -- text
 -------------------------------------------------------------------------------
 
+-- | >>> traverse_ (print . prettyExpr . toExpr . LT.pack) ["", "\n", "foo", "foo\n", "foo\nbar", "foo\nbar\n"]
+-- ""
+-- "\n"
+-- "foo"
+-- "foo\n"
+-- LT.concat ["foo\n", "bar"]
+-- LT.concat ["foo\n", "bar\n"]
 instance ToExpr LT.Text where
-    toExpr = stringToExpr "LT.unlines" LT.lines
+    toExpr = stringToExpr "LT.concat" . unconcat LT.uncons
 
+-- | >>> traverse_ (print . prettyExpr . toExpr . T.pack) ["", "\n", "foo", "foo\n", "foo\nbar", "foo\nbar\n"]
+-- ""
+-- "\n"
+-- "foo"
+-- "foo\n"
+-- T.concat ["foo\n", "bar"]
+-- T.concat ["foo\n", "bar\n"]
 instance ToExpr T.Text where
-    toExpr = stringToExpr "T.unlines" T.lines
+    toExpr = stringToExpr "T.concat" . unconcat T.uncons
 
 -------------------------------------------------------------------------------
 -- time
@@ -316,11 +358,41 @@ instance ToExpr Time.UTCTime where
 -- bytestring
 -------------------------------------------------------------------------------
 
-instance ToExpr LBS8.ByteString where
-    toExpr = stringToExpr "LBS8.unlines" LBS8.lines
+-- | >>> traverse_ (print . prettyExpr . toExpr . LBS8.pack) ["", "\n", "foo", "foo\n", "foo\nbar", "foo\nbar\n"]
+-- ""
+-- "\n"
+-- "foo"
+-- "foo\n"
+-- LBS.concat ["foo\n", "bar"]
+-- LBS.concat ["foo\n", "bar\n"]
+instance ToExpr LBS.ByteString where
+    toExpr = stringToExpr "LBS.concat" . bsUnconcat LBS.null LBS.elemIndex LBS.splitAt
 
-instance ToExpr BS8.ByteString where
-    toExpr = stringToExpr "BS8.unlines" BS8.lines
+-- | >>> traverse_ (print . prettyExpr . toExpr . BS8.pack) ["", "\n", "foo", "foo\n", "foo\nbar", "foo\nbar\n"]
+-- ""
+-- "\n"
+-- "foo"
+-- "foo\n"
+-- BS.concat ["foo\n", "bar"]
+-- BS.concat ["foo\n", "bar\n"]
+instance ToExpr BS.ByteString where
+    toExpr = stringToExpr "BS.concat" . bsUnconcat BS.null BS.elemIndex BS.splitAt
+
+bsUnconcat
+    :: forall bs int. Num int
+    => (bs -> Bool)
+    -> (Word8 -> bs -> Maybe int)
+    -> (int -> bs -> (bs, bs))
+    -> bs
+    -> [bs]
+bsUnconcat null_ elemIndex_ splitAt_ = go where
+    go :: bs -> [bs]
+    go bs
+        | null_ bs  = []
+        | otherwise = case elemIndex_ 10 bs of
+            Nothing -> [bs]
+            Just i  -> case splitAt_ (i + 1) bs of
+                (bs0, bs1) -> bs0 : go bs1
 
 -------------------------------------------------------------------------------
 -- scientific
@@ -338,7 +410,7 @@ instance ToExpr Sci.Scientific where
 -- | >>> prettyExpr $ toExpr UUID.nil
 -- UUID "00000000-0000-0000-0000-000000000000"
 instance ToExpr UUID.UUID where
-    toExpr u = App "UUID" [ toExpr $ toString u ]
+    toExpr u = App "UUID" [ toExpr $ UUID.toString u ]
 
 -------------------------------------------------------------------------------
 -- vector
@@ -388,7 +460,11 @@ instance ToExpr Aeson.Value
 
 -- $setup
 -- >>> :set -XDeriveGeneric
+-- >>> :set -XDeriveGeneric
+-- >>> import Data.Foldable (traverse_)
 -- >>> import Data.Ratio ((%))
 -- >>> import Data.Time (Day (..))
 -- >>> import Data.Scientific (Scientific)
 -- >>> import Data.TreeDiff.Pretty
+-- >>> import qualified Data.ByteString.Char8 as BS8
+-- >>> import qualified Data.ByteString.Lazy.Char8 as LBS8

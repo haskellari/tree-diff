@@ -1,4 +1,4 @@
 Foo
-  {fooBar = [Just "pub", Just (unlines ["night", "club"])],
+  {fooBar = [Just "pub", Just (concat ["night\n", "club"])],
    fooInt = 42,
    fooQuu = _×_ 125.375 Proxy}
