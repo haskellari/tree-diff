@@ -47,7 +47,7 @@ before_install:
   - HC=${CC}
   - HCPKG=${HC/ghc/ghc-pkg}
   - unset CC
-  - PATH=/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$PATH
+  - PATH=/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$HOME/.local/bin:$PATH
 
 install:
   - cabal --version
@@ -58,6 +58,11 @@ install:
   - INSTALLED=${INSTALLED-true}
   - travis_retry cabal update -v
   - sed -i.bak 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+  # install doctest
+  - mkdir $HOME/.local/bin
+  - python cabal-new-install.py doctest doctest ~/.local/bin
+  - doctest --version
+  # build dependencies...
   - rm -fv cabal.project.local
   - "echo 'packages: .' > cabal.project"
   - if [ -f "./configure.ac" ]; then
@@ -101,6 +106,9 @@ script:
   - echo Testing... && echo -en 'travis_fold:start:test\\r'
   - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} all; fi
   - echo -en 'travis_fold:end:test\\r'
+
+  # doctest
+  - if $(echo $HC | grep -q "^ghc-8."); then doctest --fast -D__DOCTEST__ tree-diff-*/src/; fi
 
   - echo Haddock... && echo -en 'travis_fold:start:haddock\\r'
   # haddock

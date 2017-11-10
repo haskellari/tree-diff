@@ -1,6 +1,5 @@
 name:                tree-diff
-version:             0
-x-revision:          1
+version:             0.0.0.1
 synopsis:            Diffing of (expression) trees.
 description:
   Common diff algorithm works on list structures:
@@ -37,7 +36,7 @@ author:              Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:          Oleg.Grenrus <oleg.grenrus@iki.fi>
 copyright:           (c) 2017 Oleg Grenrus
 category:            Data
-build-type:          Custom
+build-type:          Simple
 extra-source-files:  README.md ChangeLog.md
 cabal-version:       >=1.10
 tested-with:
@@ -47,10 +46,6 @@ tested-with:
   GHC==8.2.1
 extra-source-files:
   fixtures/exfoo.expr
-
-custom-setup
-  setup-depends:
-    base, Cabal, cabal-doctest >=1.0.2 && <1.1
 
 source-repository head
   type:      git
@@ -111,19 +106,6 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
 
-test-suite doctests
-  type:                exitcode-stdio-1.0
-  main-is:             doctests.hs
-  x-doctest-options:   -D__DOCTEST__
-  build-depends:
-    base,
-    doctest              >=0.13.0   && <0.14,
-    template-haskell,
-    QuickCheck
-  ghc-options:         -Wall -threaded
-  hs-source-dirs:      tests
-  default-language:    Haskell2010
-
 test-suite test
   default-language:    Haskell2010
   type:                exitcode-stdio-1.0
@@ -138,6 +120,6 @@ test-suite test
     ansi-wl-pprint,
     parsec,
     trifecta             >=1.7.1.1  && <1.8,
-    tasty                >=0.11.2.5 && <0.12,
+    tasty                >=0.11.2.5 && <0.13,
     tasty-golden         >=2.3.1.1  && <2.4,
     tasty-quickcheck     >=0.9.1    && <0.10
