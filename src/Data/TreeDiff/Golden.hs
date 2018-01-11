@@ -10,8 +10,9 @@ import System.Console.ANSI (SGR (Reset), setSGRCode)
 import Text.Parsec         (eof, parse)
 import Text.Parsec.Text ()
 
-import qualified Data.Text    as T
-import qualified Data.Text.IO as T
+import qualified Data.ByteString    as BS
+import qualified Data.Text          as T
+import qualified Data.Text.Encoding as T
 
 -- | Make a golden tests.
 --
@@ -45,12 +46,12 @@ ediffGolden impl testName fp x = impl testName expect actual cmp wrt
   where
     actual = fmap toExpr x
     expect = do
-        contents <- T.readFile fp
-        case parse (exprParser <* eof) fp contents of
+        contents <- BS.readFile fp
+        case parse (exprParser <* eof) fp $ T.decodeUtf8 contents of
             Left err -> print err >> fail "parse error"
             Right r  -> return r
     cmp a b
-        | a == b    = return $ Nothing
+        | a == b    = return Nothing
         | otherwise = return $ Just $
             setSGRCode [Reset] ++ show (ansiWlEditExpr $ ediff a b)
-    wrt expr = T.writeFile fp $ T.pack $ show (prettyExpr expr) ++ "\n"
+    wrt expr = BS.writeFile fp $ T.encodeUtf8 $ T.pack $ show (prettyExpr expr) ++ "\n"

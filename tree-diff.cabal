@@ -1,5 +1,5 @@
 name:                tree-diff
-version:             0.0.0.1
+version:             0.0.1
 synopsis:            Diffing of (expression) trees.
 description:
   Common diff algorithm works on list structures:
