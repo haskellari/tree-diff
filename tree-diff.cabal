@@ -1,5 +1,6 @@
 name:                tree-diff
 version:             0.0.1
+x-revision:          1
 synopsis:            Diffing of (expression) trees.
 description:
   Common diff algorithm works on list structures:
@@ -76,7 +77,7 @@ library
     parsec               >=3.1.11   && <3.2,
     parsers              >=0.12.7   && <0.13,
     pretty               >=1.1.1.1  && <1.2,
-    QuickCheck           >=2.10.0.1 && <2.11,
+    QuickCheck           >=2.10.0.1 && <2.12,
     scientific           >=0.3.5.2  && <0.4,
     tagged               >=0.8.5    && <0.9,
     text                 >=1.2.2.2  && <1.3,
