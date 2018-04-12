@@ -1,6 +1,6 @@
 name:                tree-diff
 version:             0.0.1
-x-revision:          2
+x-revision:          3
 synopsis:            Diffing of (expression) trees.
 description:
   Common diff algorithm works on list structures:
@@ -69,7 +69,7 @@ library
     aeson                >=1.2.1.0  && <1.4,
     ansi-wl-pprint       >=0.6.8.1  && <0.7,
     ansi-terminal        >=0.6.3.1  && <0.9,
-    base-compat          >=0.9.3    && <0.10,
+    base-compat          >=0.9.3    && <0.11,
     bytestring           >=0.10.4.0 && <0.11,
     containers           >=0.5.5.1  && <0.6,
     generics-sop         >=0.3.1.0  && <0.4,
