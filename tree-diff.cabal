@@ -1,6 +1,6 @@
 name:                tree-diff
 version:             0.0.1
-x-revision:          3
+x-revision:          4
 synopsis:            Diffing of (expression) trees.
 description:
   Common diff algorithm works on list structures:
@@ -66,7 +66,7 @@ library
     Data.TreeDiff.QuickCheck
   build-depends:
     base                 >=4.7      && <4.12,
-    aeson                >=1.2.1.0  && <1.4,
+    aeson                >=1.2.1.0  && <1.5,
     ansi-wl-pprint       >=0.6.8.1  && <0.7,
     ansi-terminal        >=0.6.3.1  && <0.9,
     base-compat          >=0.9.3    && <0.11,
@@ -122,6 +122,6 @@ test-suite test
     ansi-wl-pprint,
     parsec,
     trifecta             >=1.7.1.1  && <1.8,
-    tasty                >=0.11.2.5 && <1.1,
+    tasty                >=0.11.2.5 && <1.2,
     tasty-golden         >=2.3.1.1  && <2.4,
     tasty-quickcheck     >=0.9.1    && <0.11
