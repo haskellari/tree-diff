@@ -122,7 +122,7 @@ test-suite test
     ansi-terminal,
     ansi-wl-pprint,
     parsec,
-    trifecta             >=1.7.1.1  && <1.8,
+    trifecta             >=1.7.1.1  && <2.1,
     tasty                >=0.11.2.5 && <1.2,
     tasty-golden         >=2.3.1.1  && <2.4,
     tasty-quickcheck     >=0.9.1    && <0.11
