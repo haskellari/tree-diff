@@ -1,6 +1,6 @@
 name:                tree-diff
 version:             0.0.1
-x-revision:          4
+x-revision:          5
 synopsis:            Diffing of (expression) trees.
 description:
   Common diff algorithm works on list structures:
@@ -45,7 +45,8 @@ tested-with:
   GHC==7.10.3,
   GHC==8.0.2,
   GHC==8.2.2,
-  GHC==8.4.3
+  GHC==8.4.3,
+  GHc==8.6.1
 
 extra-source-files:
   fixtures/exfoo.expr
@@ -79,7 +80,7 @@ library
     parsec               >=3.1.11   && <3.2,
     parsers              >=0.12.7   && <0.13,
     pretty               >=1.1.1.1  && <1.2,
-    QuickCheck           >=2.10.0.1 && <2.12,
+    QuickCheck           >=2.10.0.1 && <2.13,
     scientific           >=0.3.5.2  && <0.4,
     tagged               >=0.8.5    && <0.9,
     text                 >=1.2.2.2  && <1.3,
