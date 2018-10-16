@@ -1,5 +1,10 @@
 # Revision history for tree-diff
 
+## 0.0.2
+
+- Print compact diffs
+- Add `ToExpr` instance for `ShortByteString`
+
 ## 0.0.1
 
 - Use `BS.readFile` and `BS.writeFile` in `ediffGolden`.

@@ -16,8 +16,8 @@ import qualified Data.Text.Encoding as T
 
 -- | Make a golden tests.
 --
--- 'ediffGolden' is testing framework agnostic, thus the test framework
--- looks intimdating.
+-- 'ediffGolden' is testing framework agnostic, thus the type
+-- looks intimidating.
 --
 -- An example using @tasty-golden@,
 -- 'goldenTest' is imported from "Test.Tasty.Golden.Advanced"
@@ -30,7 +30,7 @@ import qualified Data.Text.Encoding as T
 --
 -- The 'ediffGolden' will read an 'Expr' from provided path to golden file,
 -- and compare it with a 'toExpr' of a result. If values differ,
--- the diff of two will be printed.
+-- the (compact) diff of two will be printed.
 --
 -- See <https://github.com/phadej/tree-diff/blob/master/tests/Tests.hs>
 -- for a proper example.
@@ -53,5 +53,5 @@ ediffGolden impl testName fp x = impl testName expect actual cmp wrt
     cmp a b
         | a == b    = return Nothing
         | otherwise = return $ Just $
-            setSGRCode [Reset] ++ show (ansiWlEditExpr $ ediff a b)
+            setSGRCode [Reset] ++ show (ansiWlEditExprCompact $ ediff a b)
     wrt expr = BS.writeFile fp $ T.encodeUtf8 $ T.pack $ show (prettyExpr expr) ++ "\n"

@@ -4,26 +4,32 @@ module Data.TreeDiff.Pretty (
     Pretty (..),
     ppExpr,
     ppEditExpr,
+    ppEditExprCompact,
     -- * pretty
     prettyPretty,
     prettyExpr,
     prettyEditExpr,
+    prettyEditExprCompact,
     -- * ansi-wl-pprint
     ansiWlPretty,
     ansiWlExpr,
     ansiWlEditExpr,
+    ansiWlEditExprCompact,
     -- ** background
     ansiWlBgPretty,
     ansiWlBgExpr,
     ansiWlBgEditExpr,
+    ansiWlBgEditExprCompact,
     -- * Utilities
     escapeName,
     ) where
 
 import Data.Char          (isAlphaNum, isPunctuation, isSymbol, ord)
+import Data.Either        (partitionEithers)
 import Data.TreeDiff.Expr
 import Numeric            (showHex)
 import Text.Read          (readMaybe)
+
 
 import qualified Data.Map                     as Map
 import qualified Text.PrettyPrint             as HJ
@@ -119,7 +125,14 @@ ppExpr' p = impl where
 
 -- | Pretty print an @'Edit' 'EditExpr'@ using explicit pretty-printing dictionary.
 ppEditExpr :: Pretty doc -> Edit EditExpr -> doc
-ppEditExpr p = ppSep p . ppEdit False
+ppEditExpr = ppEditExpr' False
+
+-- | Like 'ppEditExpr' but print unchanged parts only shallowly
+ppEditExprCompact :: Pretty doc -> Edit EditExpr -> doc
+ppEditExprCompact = ppEditExpr' True
+
+ppEditExpr' :: Bool -> Pretty doc -> Edit EditExpr -> doc
+ppEditExpr' compact p = ppSep p . ppEdit False
   where
     ppEdit b (Cpy (EditExp expr)) = [ ppCpy p $ ppExpr' p b expr ]
     ppEdit b (Cpy expr) = [ ppEExpr b expr ]
@@ -134,14 +147,22 @@ ppEditExpr p = ppSep p . ppEdit False
     ppEExpr b (EditApp x xs) = ppParens' b $ ppHang p (ppCon p (escapeName x)) $
         ppSep p $ concatMap (ppEdit True) xs
     ppEExpr _ (EditRec x xs) = ppHang p (ppCon p (escapeName x)) $ ppRec p $
-        map ppField' $ Map.toList xs
+        justs ++ [ (n, ppCon p "...") | n <- take 1 nothings ]
+      where
+        xs' = map ppField' $ Map.toList xs
+        (nothings, justs) = partitionEithers xs'
+
     ppEExpr _ (EditLst xs)   = ppLst p (concatMap (ppEdit False) xs)
     ppEExpr b (EditExp x)    = ppExpr' p b x
 
-    ppField' (n, e) = (escapeName n, ppSep p $ ppEdit False e)
+    ppField' (n, Cpy (EditExp e)) | compact, not (isScalar e) = Left n
+    ppField' (n, e) = Right (escapeName n, ppSep p $ ppEdit False e)
 
     ppParens' True  = ppParens p
     ppParens' False = id
+
+    isScalar (App _ []) = True
+    isScalar _          = False
 
 -------------------------------------------------------------------------------
 -- pretty
@@ -173,6 +194,10 @@ prettyExpr = ppExpr prettyPretty
 prettyEditExpr :: Edit EditExpr -> HJ.Doc
 prettyEditExpr = ppEditExpr prettyPretty
 
+-- | Compact 'prettyEditExpr'.
+prettyEditExprCompact :: Edit EditExpr -> HJ.Doc
+prettyEditExprCompact = ppEditExprCompact prettyPretty
+
 -------------------------------------------------------------------------------
 -- ansi-wl-pprint
 -------------------------------------------------------------------------------
@@ -200,6 +225,10 @@ ansiWlExpr = ppExpr ansiWlPretty
 ansiWlEditExpr :: Edit EditExpr -> WL.Doc
 ansiWlEditExpr = ppEditExpr ansiWlPretty
 
+-- | Compact 'ansiWlEditExpr'
+ansiWlEditExprCompact :: Edit EditExpr -> WL.Doc
+ansiWlEditExprCompact = ppEditExprCompact ansiWlPretty
+
 -------------------------------------------------------------------------------
 -- Background
 -------------------------------------------------------------------------------
@@ -209,7 +238,7 @@ ansiWlBgPretty :: Pretty WL.Doc
 ansiWlBgPretty = ansiWlPretty
     { ppIns    = \d -> WL.ondullgreen $ WL.white $ WL.plain $ WL.char '+' WL.<> d
     , ppDel    = \d -> WL.ondullred   $ WL.white $ WL.plain $ WL.char '-' WL.<> d
-    } 
+    }
 
 -- | Pretty print 'Expr' using @ansi-wl-pprint@.
 ansiWlBgExpr :: Expr -> WL.Doc
@@ -218,3 +247,7 @@ ansiWlBgExpr = ppExpr ansiWlBgPretty
 -- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
 ansiWlBgEditExpr :: Edit EditExpr -> WL.Doc
 ansiWlBgEditExpr = ppEditExpr ansiWlBgPretty
+
+-- | Compact 'ansiWlBgEditExpr'.
+ansiWlBgEditExprCompact :: Edit EditExpr -> WL.Doc
+ansiWlBgEditExprCompact = ppEditExprCompact ansiWlBgPretty
