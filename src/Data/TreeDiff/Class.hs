@@ -57,8 +57,9 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Time as Time
 
 -- bytestring
-import qualified Data.ByteString      as BS
-import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString       as BS
+import qualified Data.ByteString.Lazy  as LBS
+import qualified Data.ByteString.Short as SBS
 
 -- scientific
 import qualified Data.Scientific as Sci
@@ -377,6 +378,16 @@ instance ToExpr LBS.ByteString where
 -- BS.concat ["foo\n", "bar\n"]
 instance ToExpr BS.ByteString where
     toExpr = stringToExpr "BS.concat" . bsUnconcat BS.null BS.elemIndex BS.splitAt
+
+-- | >>> traverse_ (print . prettyExpr . toExpr . SBS.toShort . BS8.pack) ["", "\n", "foo", "foo\n", "foo\nbar", "foo\nbar\n"]
+-- ""
+-- "\n"
+-- "foo"
+-- "foo\n"
+-- mconcat ["foo\n", "bar"]
+-- mconcat ["foo\n", "bar\n"]
+instance ToExpr SBS.ShortByteString where
+    toExpr = stringToExpr "mconcat" . bsUnconcat BS.null BS.elemIndex BS.splitAt . SBS.fromShort
 
 bsUnconcat
     :: forall bs int. Num int
