@@ -93,7 +93,8 @@ data Foo = Foo
     { fooInt :: Int
     , fooBar :: [Maybe String]
     , fooQuu :: (Double, Proxy ())
-    -- , fooNew :: Bool
+    , fooNew :: Bool
+    , fooStr :: String
     }
   deriving (Eq, Show, Generic)
 
@@ -104,7 +105,8 @@ exFoo = Foo
     { fooInt = 42
     , fooBar = [Just "pub", Just "night\nclub"]
     , fooQuu = (125.375, Proxy)
-    -- , fooNew = True
+    , fooNew = True
+    , fooStr = "Some Name"
     }
 
 exFooTests :: TestTree
