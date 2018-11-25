@@ -32,12 +32,12 @@ before_cache:
 
 matrix:
   include:
-    - compiler: "ghc-8.6.1"
+    - compiler: "ghc-8.6.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.1], sources: [hvr-ghc]}}
-    - compiler: "ghc-8.4.3"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.2], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.4.4"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.4.3], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.4.4], sources: [hvr-ghc]}}
     - compiler: "ghc-8.2.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.2.2], sources: [hvr-ghc]}}
@@ -96,10 +96,10 @@ install:
 script:
   # test that source-distributions can be generated
   - echo Packaging... && echo -en 'travis_fold:start:sdist\\r'
-  - (cd "." && cabal sdist)
+  - cabal new-sdist all
   - echo -en 'travis_fold:end:sdist\\r'
   - echo Unpacking... && echo -en 'travis_fold:start:unpack\\r'
-  - mv "."/dist/tree-diff-*.tar.gz ${DISTDIR}/
+  - mv dist-newstyle/sdist/*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: tree-diff-*/*.cabal\\n' > cabal.project"
@@ -131,7 +131,6 @@ script:
   - echo -en 'travis_fold:end:check\\r'
   - echo Haddock... && echo -en 'travis_fold:start:haddock\\r'
   # haddock
-  - rm -rf ./dist-newstyle
   - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} all; else echo "Skipping haddock generation";fi
 
   - echo -en 'travis_fold:end:haddock\\r'

@@ -3,7 +3,7 @@ name:                tree-diff
 version:             0.0.2
 
 synopsis:            Diffing of (expression) trees.
-category:            Data
+category:            Data, Testing
 description:
   Common diff algorithm works on list structures:
   .
@@ -37,7 +37,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:          Oleg.Grenrus <oleg.grenrus@iki.fi>
-copyright:           (c) 2017 Oleg Grenrus
+copyright:           (c) 2017-2018 Oleg Grenrus
 build-type:          Simple
 extra-source-files:  README.md ChangeLog.md
 tested-with:
@@ -45,8 +45,8 @@ tested-with:
   GHC==7.10.3,
   GHC==8.0.2,
   GHC==8.2.2,
-  GHC==8.4.3,
-  GHc==8.6.1
+  GHC==8.4.4,
+  GHc==8.6.2
 
 extra-source-files:
   fixtures/exfoo.expr
