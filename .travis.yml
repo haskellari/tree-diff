@@ -78,6 +78,7 @@ install:
   - (cd /tmp && echo '' | cabal new-repl -w ${HC} --build-dep fail)
   - if [ $HCNUMVER -ge 80000 ]; then cabal new-install -w ${HC} -j2 --symlink-bindir=$HOME/.local/bin doctest --constraint='doctest ==0.16.*'; fi
   - "printf 'packages: \".\"\\n' > cabal.project"
+  - "printf 'write-ghc-environment-files: always' >> cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- tree-diff | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
@@ -103,6 +104,7 @@ script:
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: tree-diff-*/*.cabal\\n' > cabal.project"
+  - "printf 'write-ghc-environment-files: always' >> cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- tree-diff | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
