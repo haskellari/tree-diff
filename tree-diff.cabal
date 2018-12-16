@@ -46,7 +46,7 @@ tested-with:
   GHC==8.0.2,
   GHC==8.2.2,
   GHC==8.4.4,
-  GHc==8.6.2
+  GHc==8.6.3
 
 extra-source-files:
   fixtures/exfoo.expr
@@ -124,6 +124,6 @@ test-suite test
     ansi-wl-pprint,
     parsec,
     trifecta             >=1.7.1.1  && <2.1,
-    tasty                >=0.11.2.5 && <1.2,
+    tasty                >=0.11.2.5 && <1.3,
     tasty-golden         >=2.3.1.1  && <2.4,
     tasty-quickcheck     >=0.9.1    && <0.11
