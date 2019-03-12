@@ -47,7 +47,7 @@ tested-with:
   GHC==8.0.2,
   GHC==8.2.2,
   GHC==8.4.4,
-  GHc==8.6.3
+  GHc==8.6.4
 
 extra-source-files:
   fixtures/exfoo.expr
