@@ -1,7 +1,7 @@
 cabal-version:       >=1.10
 name:                tree-diff
 version:             0.0.2
-x-revision:          1
+x-revision:          2
 
 synopsis:            Diffing of (expression) trees.
 category:            Data, Testing
@@ -81,7 +81,7 @@ library
     parsec               >=3.1.11   && <3.2,
     parsers              >=0.12.7   && <0.13,
     pretty               >=1.1.1.1  && <1.2,
-    QuickCheck           >=2.10.0.1 && <2.13,
+    QuickCheck           >=2.10.0.1 && <2.14,
     scientific           >=0.3.5.2  && <0.4,
     tagged               >=0.8.5    && <0.9,
     text                 >=1.2.2.2  && <1.3,
