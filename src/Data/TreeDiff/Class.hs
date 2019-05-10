@@ -152,8 +152,8 @@ sopToExpr di (SOP xss) = hcollapse $ hcliftA2
     xss
   where
     isNewtype = case di of
-        Newtype _ _ _ -> True
-        ADT _ _ _     -> False
+        Newtype {} -> True
+        ADT {}     -> False
 
 sopNPToExpr :: All ToExpr xs => Bool -> ConstructorInfo xs -> NP I xs -> Expr
 sopNPToExpr _ (Infix cn _ _) xs = App ("_" ++ cn ++ "_") $ hcollapse $
