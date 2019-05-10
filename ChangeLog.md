@@ -1,5 +1,9 @@
 # Revision history for tree-diff
 
+## 0.0.2.1
+
+- Support semigroups-0.19, hashable-1.3 and generics-sop-0.5
+
 ## 0.0.2
 
 - Print compact diffs
