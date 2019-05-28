@@ -28,7 +28,7 @@ import Data.Char          (isAlphaNum, isPunctuation, isSymbol, ord)
 import Data.Either        (partitionEithers)
 import Data.TreeDiff.Expr
 import Numeric            (showHex)
-import Text.Read          (readMaybe)
+import Text.Read.Compat   (readMaybe)
 
 
 import qualified Data.Map                     as Map

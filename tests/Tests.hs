@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
 module Main (main) where
 
 import Data.Proxy                 (Proxy (..))
@@ -121,10 +121,20 @@ data MyInt3 = MyInt3 { getMyInt3 :: Int}
 data Positional = Positional Int Bool Char
   deriving (Eq, Show, Generic)
 
+data Empty
+  deriving (Generic)
+
+instance Eq Empty where
+    _ == _ = True
+
+instance Show Empty where
+    showsPrec _ _ = error "Empty?"
+
 instance ToExpr MyInt1
 instance ToExpr MyInt2
 instance ToExpr MyInt3
 instance ToExpr Positional
+instance ToExpr Empty
 
 goldenTests :: TestTree
 goldenTests = testGroup "Golden"
