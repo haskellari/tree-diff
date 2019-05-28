@@ -22,7 +22,7 @@ main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
     , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
-    , exFooTests
+    , goldenTests
     ]
 
 -------------------------------------------------------------------------------
@@ -109,6 +109,34 @@ exFoo = Foo
     , fooStr = "Some Name"
     }
 
-exFooTests :: TestTree
-exFooTests = ediffGolden goldenTest "golden exFoo" "fixtures/exfoo.expr" $
-    return exFoo
+newtype MyInt1 = MyInt1 Int
+  deriving (Eq, Show, Generic)
+
+newtype MyInt2 = MyInt2 { getMyInt2 :: Int }
+  deriving (Eq, Show, Generic)
+
+data MyInt3 = MyInt3 { getMyInt3 :: Int}
+  deriving (Eq, Show, Generic)
+
+data Positional = Positional Int Bool Char
+  deriving (Eq, Show, Generic)
+
+instance ToExpr MyInt1
+instance ToExpr MyInt2
+instance ToExpr MyInt3
+instance ToExpr Positional
+
+goldenTests :: TestTree
+goldenTests = testGroup "Golden"
+    [ ediffGolden goldenTest "exFoo" "fixtures/exfoo.expr" $
+        return exFoo
+    , ediffGolden goldenTest "MyInt1" "fixtures/MyInt1.expr" $
+        return $ MyInt1 42
+    , ediffGolden goldenTest "MyInt2" "fixtures/MyInt2.expr" $
+        return $ MyInt2 42
+    , ediffGolden goldenTest "MyInt3" "fixtures/MyInt3.expr" $
+        return $ MyInt3 42
+    , ediffGolden goldenTest "Positional" "fixtures/Positional.expr" $
+        return $ Positional 12 True 'z'
+    ]
+
