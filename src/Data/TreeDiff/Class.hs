@@ -5,28 +5,31 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators       #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
+{-# LANGUAGE EmptyCase           #-}
+#endif
 -- | A 'ToExpr' class.
 module Data.TreeDiff.Class (
     ediff,
     ediff',
     ToExpr (..),
     defaultExprViaShow,
-    -- * SOP
-    sopToExpr,
+    -- * Generics
+    genericToExpr,
+    GToExpr,
     ) where
 
-import Data.Foldable      (toList)
-import Data.Proxy         (Proxy (..))
-import Data.TreeDiff.Expr
-import Data.List.Compat      (uncons)
-import Generics.SOP
-       (All, All2, ConstructorInfo (..), DatatypeInfo (..), FieldInfo (..),
-       I (..), K (..), NP (..), SOP (..), constructorInfo, hcliftA2, hcmap,
-       hcollapse, mapIK)
-import Generics.SOP.GGP   (GCode, GDatatypeInfo, GFrom, gdatatypeInfo, gfrom)
-import GHC.Generics       (Generic)
+import Data.Foldable    (toList)
+import Data.List.Compat (uncons)
+import Data.Proxy       (Proxy (..))
+import GHC.Generics
+       ((:*:) (..), (:+:) (..), Constructor (..), Generic (..), K1 (..), M1 (..),
+       Selector (..), U1 (..), V1)
 
 import qualified Data.Map as Map
+
+import Data.TreeDiff.Expr
 
 -- Instances
 import Control.Applicative   (Const (..), ZipList (..))
@@ -37,6 +40,10 @@ import Data.List.NonEmpty    (NonEmpty (..))
 import Data.Void             (Void)
 import Data.Word
 import Numeric.Natural       (Natural)
+
+#ifdef MIN_VERSION_generic_deriving
+import Generics.Deriving.Instances ()
+#endif
 
 import qualified Data.Monoid    as Mon
 import qualified Data.Ratio     as Ratio
@@ -59,6 +66,7 @@ import qualified Data.Time as Time
 -- bytestring
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Lazy  as LBS
+
 import qualified Data.ByteString.Short as SBS
 
 -- scientific
@@ -127,9 +135,9 @@ ediff' x y = exprDiff (toExpr x) (toExpr y)
 class ToExpr a where
     toExpr :: a -> Expr
     default toExpr
-        :: (Generic a, All2 ToExpr (GCode a), GFrom a, GDatatypeInfo a)
+        :: (Generic a, GToExpr (Rep a))
         => a -> Expr
-    toExpr x = sopToExpr (gdatatypeInfo (Proxy :: Proxy a)) (gfrom x)
+    toExpr = genericToExpr
 
     listToExpr :: [a] -> Expr
     listToExpr = Lst . map toExpr
@@ -142,31 +150,77 @@ instance ToExpr Expr where
 defaultExprViaShow :: Show a => a -> Expr
 defaultExprViaShow x = App (show x) []
 
--- | >>> prettyExpr $ sopToExpr (gdatatypeInfo (Proxy :: Proxy String)) (gfrom "foo")
--- _:_ 'f' "oo"
-sopToExpr :: (All2 ToExpr xss) => DatatypeInfo xss -> SOP I xss -> Expr
-sopToExpr di (SOP xss) = hcollapse $ hcliftA2
-    (Proxy :: Proxy (All ToExpr))
-    (\ci xs -> K (sopNPToExpr isNewtype ci xs))
-    (constructorInfo di)
-    xss
-  where
-    isNewtype = case di of
-        Newtype {} -> True
-        ADT {}     -> False
+-------------------------------------------------------------------------------
+-- Generics
+-------------------------------------------------------------------------------
 
-sopNPToExpr :: All ToExpr xs => Bool -> ConstructorInfo xs -> NP I xs -> Expr
-sopNPToExpr _ (Infix cn _ _) xs = App ("_" ++ cn ++ "_") $ hcollapse $
-    hcmap (Proxy :: Proxy ToExpr) (mapIK toExpr) xs
-sopNPToExpr _ (Constructor cn) xs = App cn $ hcollapse $
-    hcmap (Proxy :: Proxy ToExpr) (mapIK toExpr) xs
-sopNPToExpr True (Record cn _) xs = App cn $ hcollapse $
-    hcmap (Proxy :: Proxy ToExpr) (mapIK toExpr) xs
-sopNPToExpr False (Record cn fi) xs = Rec cn $ Map.fromList $ hcollapse $
-    hcliftA2 (Proxy :: Proxy ToExpr) mk fi xs
+class GToExpr f where
+    gtoExpr :: f x -> Expr
+
+instance GSumToExpr f => GToExpr (M1 i c f) where
+    gtoExpr (M1 x) = gsumToExpr x
+
+class GSumToExpr f where
+    gsumToExpr :: f x -> Expr
+
+instance (GSumToExpr f, GSumToExpr g) => GSumToExpr (f :+: g) where
+    gsumToExpr (L1 x) = gsumToExpr x
+    gsumToExpr (R1 x) = gsumToExpr x
+
+instance GSumToExpr V1 where
+#if __GLASGOW_HASKELL__ >= 708
+    gsumToExpr x = case x of {}
+#else
+    gsumToExpr x = x `seq` error "panic: V1 value"
+#endif
+
+instance (Constructor c, GProductToExpr f) => GSumToExpr (M1 i c f) where
+    gsumToExpr z@(M1 x) = case gproductToExpr x of
+        App' exprs   -> App cn exprs
+        Rec' []      -> App cn []
+        Rec' [(_,e)] -> App cn [e]
+        Rec' pairs   -> Rec cn (Map.fromList pairs)
+      where
+        cn = conName z
+
+class GProductToExpr f where
+    gproductToExpr :: f x -> AppOrRec
+
+instance (GProductToExpr f, GProductToExpr g) => GProductToExpr (f :*: g) where
+    gproductToExpr (f :*: g) = gproductToExpr f `combine` gproductToExpr g
+
+instance GProductToExpr U1 where
+    gproductToExpr _ = Rec' []
+
+instance (Selector s, GLeafToExpr f) => GProductToExpr (M1 i s f) where
+    gproductToExpr z@(M1 x) = case selName z of
+        [] -> App' [gleafToExpr x]
+        sn -> Rec' [(sn, gleafToExpr x)]
+
+class GLeafToExpr f where
+    gleafToExpr :: f x -> Expr
+
+instance ToExpr x => GLeafToExpr (K1 i x) where
+    gleafToExpr (K1 x) = toExpr x
+
+data AppOrRec = App' [Expr] | Rec' [(FieldName, Expr)]
+  deriving Show
+
+combine :: AppOrRec -> AppOrRec -> AppOrRec
+combine (Rec' xs) (Rec' ys) = Rec' (xs ++ ys)
+combine xs        ys        = App' (exprs xs ++ exprs ys)
   where
-    mk :: ToExpr x => FieldInfo x -> I x -> K (FieldName, Expr) x
-    mk (FieldInfo fn) (I x) = K (fn, toExpr x)
+    exprs (App' zs) = zs
+    exprs (Rec' zs) = map snd zs
+
+-- | Generic 'toExpr'.
+--
+-- >>> data Foo = Foo Int Char deriving Generic
+-- >>> genericToExpr (Foo 42 'x')
+-- App "Foo" [App "42" [],App "'x'" []]
+--
+genericToExpr :: (Generic a, GToExpr (Rep a)) => a -> Expr
+genericToExpr = gtoExpr . from
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -295,11 +349,17 @@ instance ToExpr a => ToExpr (Mon.Product a) where
 instance ToExpr a => ToExpr (Mon.First a) where
 instance ToExpr a => ToExpr (Mon.Last a) where
 
+-- ...
 instance ToExpr a => ToExpr (Semi.Option a) where
+    toExpr (Semi.Option x) = App "Option" [toExpr x]
 instance ToExpr a => ToExpr (Semi.Min a) where
+    toExpr (Semi.Min x) = App "Min" [toExpr x]
 instance ToExpr a => ToExpr (Semi.Max a) where
+    toExpr (Semi.Max x) = App "Max" [toExpr x]
 instance ToExpr a => ToExpr (Semi.First a) where
+    toExpr (Semi.First x) = App "First" [toExpr x]
 instance ToExpr a => ToExpr (Semi.Last a) where
+    toExpr (Semi.Last x) = App "Last" [toExpr x]
 
 -------------------------------------------------------------------------------
 -- containers
@@ -470,7 +530,6 @@ instance ToExpr Aeson.Value
 -------------------------------------------------------------------------------
 
 -- $setup
--- >>> :set -XDeriveGeneric
 -- >>> :set -XDeriveGeneric
 -- >>> import Data.Foldable (traverse_)
 -- >>> import Data.Ratio ((%))

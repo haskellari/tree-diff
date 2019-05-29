@@ -3,7 +3,6 @@
 module Data.TreeDiff.List (diffBy, Edit (..)) where
 
 import Data.List.Compat (sortOn)
-import qualified Data.MemoTrie as M
 import qualified Data.Vector as V
 
 -- | List edit operations
@@ -32,12 +31,23 @@ data Edit a
 -- of more obviously correct implementation.
 --
 diffBy :: forall a. (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
-diffBy eq xs' ys' = reverse (snd (lcs (V.length xs) (V.length ys)))
+diffBy eq xs' ys' = reverse (snd (lcs xn yn))
   where
+    xn = V.length xs
+    yn = V.length ys
+
     xs = V.fromList xs'
     ys = V.fromList ys'
 
-    lcs = M.memo2 impl
+    memo :: V.Vector (Int, [Edit a])
+    memo = V.fromList
+        [ impl xi yi
+        | xi <- [0 .. xn]
+        , yi <- [0 .. yn]
+        ]
+
+    lcs :: Int -> Int -> (Int, [Edit a])
+    lcs xi yi = memo V.! (yi + xi * (yn + 1))
 
     impl :: Int -> Int -> (Int, [Edit a])
     impl 0 0 = (0, [])

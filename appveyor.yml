@@ -2,8 +2,8 @@ cache:
 - '%APPDATA%\cabal -> tree-diff.cabal'
 
 install:
-- choco install -y cabal --version 2.0.0.0
-- choco install -y ghc --version 8.2.2
+- choco install -y cabal --version 2.4.0.0
+- choco install -y ghc --version 8.4.4
 - refreshenv
 - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
 - ghc --version
