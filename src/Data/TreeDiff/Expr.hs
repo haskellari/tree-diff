@@ -39,7 +39,7 @@ instance QC.Arbitrary Expr where
             [ (`App` []) <$> arbName
             ,  (`Rec` mempty) <$> arbName
             ]
-        arb n | otherwise = do
+              | otherwise = do
             n' <- QC.choose (0, n `div` 3)
             QC.oneof
                 [ App <$> arbName <*> QC.liftArbitrary (arb n')
@@ -50,7 +50,7 @@ instance QC.Arbitrary Expr where
     shrink (Lst es)   = es
         ++ [ Lst es'    | es' <- QC.shrink es ]
     shrink (Rec n fs) = Map.elems fs
-        ++ [ Rec n' fs  | n'  <- QC.shrink n  ] 
+        ++ [ Rec n' fs  | n'  <- QC.shrink n  ]
         ++ [ Rec n  fs' | fs' <- QC.shrink fs ]
     shrink (App n es) = es
         ++ [ App n' es  | n'  <- QC.shrink n  ]

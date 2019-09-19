@@ -21,7 +21,7 @@ module Data.TreeDiff (
     module Data.TreeDiff.Parser,
     ) where
 
-import Data.TreeDiff.Expr
 import Data.TreeDiff.Class
-import Data.TreeDiff.Pretty
+import Data.TreeDiff.Expr
 import Data.TreeDiff.Parser
+import Data.TreeDiff.Pretty
