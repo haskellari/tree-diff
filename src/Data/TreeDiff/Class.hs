@@ -24,8 +24,8 @@ import Data.Foldable    (toList)
 import Data.List.Compat (uncons)
 import Data.Proxy       (Proxy (..))
 import GHC.Generics
-       ((:*:) (..), (:+:) (..), Constructor (..), Generic (..), K1 (..), M1 (..),
-       Selector (..), U1 (..), V1)
+       ((:*:) (..), (:+:) (..), Constructor (..), Generic (..), K1 (..),
+       M1 (..), Selector (..), U1 (..), V1)
 
 import qualified Data.Map as Map
 
@@ -64,8 +64,8 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Time as Time
 
 -- bytestring
-import qualified Data.ByteString       as BS
-import qualified Data.ByteString.Lazy  as LBS
+import qualified Data.ByteString      as BS
+import qualified Data.ByteString.Lazy as LBS
 
 import qualified Data.ByteString.Short as SBS
 
