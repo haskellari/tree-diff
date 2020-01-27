@@ -1,7 +1,7 @@
 cabal-version:      2.2
 name:               tree-diff
 version:            0.1
-x-revision:         1
+x-revision:         2
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
@@ -53,7 +53,8 @@ tested-with:
      || ==8.2.2
      || ==8.4.4
      || ==8.6.5
-     || ==8.8.1
+     || ==8.8.2
+     || ==8.10.1
   , GHCJS ==8.4
 
 extra-source-files:
@@ -81,7 +82,7 @@ library
 
   -- GHC boot libraries
   build-depends:
-    , base        >=4.5      && <4.14
+    , base        >=4.5      && <4.15
     , bytestring  ^>=0.9.2.1 || ^>=0.10.0.2
     , containers  ^>=0.4.2.1 || ^>=0.5.0.0 || ^>=0.6.0.1
     , parsec      ^>=3.1.13.0
