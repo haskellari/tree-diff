@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.9.20200125
+# version: 0.9.20200214
 #
 version: ~> 1.0
 language: c
@@ -13,9 +13,13 @@ dist: xenial
 git:
   # whether to recursively clone submodules
   submodules: false
-branches:
-  only:
-    - master
+notifications:
+  irc:
+    channels:
+      - irc.freenode.org#haskell-lens
+    skip_join: true
+    template:
+      - "\u0313tree-diff\u0003/\u0306%{branch}\u0003 \u0314%{commit}\u0003 %{build_url} %{message}"
 cache:
   directories:
     - $HOME/.cabal/packages
@@ -187,5 +191,5 @@ script:
   - rm -f cabal.project.local
   - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks all
 
-# REGENDATA ("0.9.20200125",["--config=cabal.haskell-ci","cabal.project"])
+# REGENDATA ("0.9.20200214",["--config=cabal.haskell-ci","cabal.project"])
 # EOF
