@@ -19,7 +19,7 @@ notifications:
       - irc.freenode.org#haskell-lens
     skip_join: true
     template:
-      - "\u0313tree-diff\u0003/\u0306%{branch}\u0003 \u0314%{commit}\u0003 %{build_url} %{message}"
+      - "\x0313tree-diff\x03/\x0306%{branch}\x03 \x0314%{commit}\x03 %{build_url} %{message}"
 cache:
   directories:
     - $HOME/.cabal/packages
