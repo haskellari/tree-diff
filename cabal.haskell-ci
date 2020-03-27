@@ -1,7 +1,7 @@
 -- branches: master
 tests: >=7.6
 haddock: >=7.8
-doctest: True
+doctest: <8.10
 doctest-options: --fast -D__DOCTEST__
 doctest-filter-packages: base-compat-batteries
 
