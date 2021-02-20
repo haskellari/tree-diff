@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.11.20210101
+# version: 0.11.20210220
 #
-# REGENDATA ("0.11.20210101",["github","cabal.project"])
+# REGENDATA ("0.11.20210220",["github","cabal.project"])
 #
 name: Haskell-CI
 on:
@@ -43,7 +43,7 @@ jobs:
           nickname: github-actions
           server: irc.freenode.org
   linux:
-    name: Haskell-CI Linux - GHC ${{ matrix.ghc }}
+    name: Haskell-CI - Linux - GHC ${{ matrix.ghc }}
     runs-on: ubuntu-18.04
     container:
       image: buildpack-deps:bionic
@@ -51,7 +51,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - ghc: 8.10.3
+          - ghc: 9.0.1
+            allow-failure: false
+          - ghc: 8.10.4
             allow-failure: false
           - ghc: 8.8.4
             allow-failure: false
@@ -97,6 +99,7 @@ jobs:
           echo "HCNUMVER=$HCNUMVER" >> $GITHUB_ENV
           if [ $((GHCJSARITH || ! GHCJSARITH && HCNUMVER >= 70600)) -ne 0 ] ; then echo "ARG_TESTS=--enable-tests" >> $GITHUB_ENV ; else echo "ARG_TESTS=--disable-tests" >> $GITHUB_ENV ; fi
           echo "ARG_BENCH=--enable-benchmarks" >> $GITHUB_ENV
+          echo "HEADHACKAGE=false" >> $GITHUB_ENV
           echo "ARG_COMPILER=--ghc --with-compiler=/opt/ghc/$GHC_VERSION/bin/ghc" >> $GITHUB_ENV
           echo "GHCJSARITH=0" >> $GITHUB_ENV
         env:
@@ -135,7 +138,7 @@ jobs:
       - name: cache (tools)
         uses: actions/cache@v2
         with:
-          key: ${{ runner.os }}-${{ matrix.ghc }}-tools-7aed8f55
+          key: ${{ runner.os }}-${{ matrix.ghc }}-tools-89ca0588
           path: ~/.haskell-ci-tools
       - name: install cabal-plan
         run: |
@@ -154,10 +157,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: source
+      - name: initial cabal.project for sdist
+        run: |
+          touch cabal.project
+          echo "packages: $GITHUB_WORKSPACE/source/." >> cabal.project
+          cat cabal.project
       - name: sdist
         run: |
           mkdir -p sdist
-          cd source || false
           $CABAL sdist all --output-dir $GITHUB_WORKSPACE/sdist
       - name: unpack
         run: |
