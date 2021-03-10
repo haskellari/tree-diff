@@ -2,9 +2,6 @@
 -- | A list diff.
 module Data.TreeDiff.List (diffBy, Edit (..)) where
 
--- import           Data.List.Compat (sortOn)
--- import qualified Data.Vector      as V
-
 -- | List edit operations
 --
 -- The 'Swp' constructor is redundant, but it let us spot
