@@ -180,7 +180,7 @@ prettyPretty = Pretty
     , ppDel    = \d -> HJ.char '-' HJ.<> d
     , ppSep    = HJ.sep
     , ppParens = HJ.parens
-    , ppHang   = \d1 d2 -> HJ.hang d1 2 d2
+    , ppHang   = (`HJ.hang` 2)
     }
 
 -- | Pretty print 'Expr' using @pretty@.
