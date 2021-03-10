@@ -2,8 +2,8 @@
 -- | A list diff.
 module Data.TreeDiff.List (diffBy, Edit (..)) where
 
-import           Data.List.Compat (sortOn)
-import qualified Data.Vector      as V
+-- import           Data.List.Compat (sortOn)
+-- import qualified Data.Vector      as V
 
 -- | List edit operations
 --
@@ -14,7 +14,10 @@ data Edit a
     | Del a    -- ^ delete
     | Cpy a    -- ^ copy unchanged
     | Swp a a  -- ^ swap, i.e. delete + insert
-  deriving Show
+  deriving (Eq, Show)
+
+type WEdit a = (Int, [Edit a])
+type WEdits a = [WEdit a]
 
 -- | List difference.
 --
@@ -31,43 +34,17 @@ data Edit a
 -- of more obviously correct implementation.
 --
 diffBy :: forall a. (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
-diffBy eq xs' ys' = reverse (snd (lcs xn yn))
+diffBy eq xs' ys' = reverse (snd (last (foldl (nextRow ys') row0 xs')))
   where
-    xn = V.length xs
-    yn = V.length ys
-
-    xs = V.fromList xs'
-    ys = V.fromList ys'
-
-    memo :: V.Vector (Int, [Edit a])
-    memo = V.fromList
-        [ impl xi yi
-        | xi <- [0 .. xn]
-        , yi <- [0 .. yn]
-        ]
-
-    lcs :: Int -> Int -> (Int, [Edit a])
-    lcs xi yi = memo V.! (yi + xi * (yn + 1))
-
-    impl :: Int -> Int -> (Int, [Edit a])
-    impl 0 0 = (0, [])
-    impl 0 m = case lcs 0 (m-1) of
-        (w, edit) -> (w + 1, Ins (ys V.! (m - 1)) : edit)
-    impl n 0 = case lcs (n -1) 0 of
-        (w, edit) -> (w + 1, Del (xs V.! (n - 1)) : edit)
-
-    impl n m = head $ sortOn fst
-        [ edit
-        , bimap (+1) (Ins y :) (lcs n (m - 1))
-        , bimap (+1) (Del x :) (lcs (n - 1) m)
-        ]
-      where
-        x = xs V.! (n - 1)
-        y = ys V.! (m - 1)
-
-        edit
-            | eq x y    = bimap id   (Cpy x :)   (lcs (n - 1) (m - 1))
-            | otherwise = bimap (+1) (Swp x y :) (lcs (n -1 ) (m - 1))
-
-bimap :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
-bimap f g (x, y) = (f x, g y)
+    row0 :: WEdits a
+    row0 = scanl (\(w, is) i -> (w+1, Ins i: is)) (0, []) ys'
+    nextCell :: a -> WEdit a -> a -> WEdit a -> WEdit a -> WEdit a
+    nextCell x (l, le) y (lt, lte) (t, te)
+      | eq x y = (lt, Cpy x : lte)
+      | lt <= t && lt <= l = (lt+1, Swp x y:lte)
+      | l <= t = (l+1, Ins y:le)
+      | otherwise = (t+1, Del x:te)
+    curryNextCell :: a -> WEdit a -> ((a, WEdit a), WEdit a) -> WEdit a
+    curryNextCell x l = uncurry (uncurry (nextCell x l))
+    nextRow :: [a] -> WEdits a -> a -> WEdits a
+    nextRow ys da@(~((dn, de):ds)) x = scanl (curryNextCell x) (dn+1,Del x:de) (zip (zip ys da) ds)

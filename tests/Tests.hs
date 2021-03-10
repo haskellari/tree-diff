@@ -1,10 +1,13 @@
 {-# LANGUAGE DeriveGeneric     #-}
 module Main (main) where
 
+import Data.List.Compat (sortOn)
 import Data.Proxy                 (Proxy (..))
 import Data.TreeDiff
+import Data.TreeDiff.List
 import Data.TreeDiff.Golden
 import Data.TreeDiff.QuickCheck
+import qualified Data.Vector      as V
 import GHC.Generics               (Generic)
 import Prelude ()
 import Prelude.Compat
@@ -22,6 +25,7 @@ main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
     , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
+    , testProperty "check validity new diffBy" checkEquivalentDiffBy
     , goldenTests
     ]
 
@@ -71,6 +75,48 @@ roundtripParsecAnsiWl e = counterexample info $ ediffEq (Just e) res'
             show err
 
     res' = either (const Nothing) Just res
+
+checkEquivalentDiffBy :: [Int] -> [Int] -> Bool
+checkEquivalentDiffBy xs ys = oldDiffBy (==) xs ys == diffBy (==) xs ys
+
+oldDiffBy :: (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
+oldDiffBy eq xs' ys' = reverse (snd (lcs xn yn))
+  where
+    xn = V.length xs
+    yn = V.length ys
+
+    xs = V.fromList xs'
+    ys = V.fromList ys'
+
+    memo = V.fromList
+        [ impl xi yi
+        | xi <- [0 .. xn]
+        , yi <- [0 .. yn]
+        ]
+
+    lcs xi yi = memo V.! (yi + xi * (yn + 1))
+
+    impl 0 0 = (0, [])
+    impl 0 m = case lcs 0 (m-1) of
+        (w, edit) -> (w + 1, Ins (ys V.! (m - 1)) : edit)
+    impl n 0 = case lcs (n -1) 0 of
+        (w, edit) -> (w + 1, Del (xs V.! (n - 1)) : edit)
+
+    impl n m = head $ sortOn fst
+        [ edit
+        , bimap (+1) (Ins y :) (lcs n (m - 1))
+        , bimap (+1) (Del x :) (lcs (n - 1) m)
+        ]
+      where
+        x = xs V.! (n - 1)
+        y = ys V.! (m - 1)
+
+        edit
+            | eq x y    = bimap id   (Cpy x :)   (lcs (n - 1) (m - 1))
+            | otherwise = bimap (+1) (Swp x y :) (lcs (n -1 ) (m - 1))
+
+bimap :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
+bimap f g (x, y) = (f x, g y)
 
 -------------------------------------------------------------------------------
 -- Golden

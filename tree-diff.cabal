@@ -153,6 +153,7 @@ test-suite test
     , tasty-quickcheck  ^>=0.10.1
     , tree-diff
     , trifecta          >=2       && <2.2
+    , vector                ^>=0.12
 
   if impl(ghc <7.5)
     build-depends: ghc-prim
