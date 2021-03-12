@@ -1,4 +1,4 @@
--- branches: master
+branches: master
 tests: >=7.6
 haddock: >=7.8
 doctest: <8.10
