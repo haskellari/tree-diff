@@ -2,8 +2,10 @@
 -- | A list diff.
 module Data.TreeDiff.List (diffBy, Edit (..)) where
 
-import           Data.List.Compat (sortOn)
-import qualified Data.Vector      as V
+import Control.DeepSeq  (NFData (..))
+import Data.List.Compat (sortOn)
+
+import qualified Data.Vector as V
 
 -- | List edit operations
 --
@@ -15,6 +17,12 @@ data Edit a
     | Cpy a    -- ^ copy unchanged
     | Swp a a  -- ^ swap, i.e. delete + insert
   deriving Show
+
+instance NFData a => NFData (Edit a) where
+    rnf (Ins x)   = rnf x
+    rnf (Del x)   = rnf x
+    rnf (Cpy x)   = rnf x
+    rnf (Swp x y) = rnf x `seq` rnf y
 
 -- | List difference.
 --

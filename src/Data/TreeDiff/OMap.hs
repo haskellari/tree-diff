@@ -19,6 +19,7 @@ import Data.List      (sortBy)
 import Data.Ord       (comparing)
 import Data.Semialign (Semialign (..))
 import Data.These     (These (..))
+import Control.DeepSeq  (NFData (..))
 
 #if MIN_VERSION_containers(0,5,0)
 import qualified Data.Map.Strict as Map
@@ -66,6 +67,16 @@ instance (Eq k, Eq v) => Eq (OMap k v) where
         go [] _  = False
         go ((k1, v1) : kvs1) ((k2, v2) : kvs2) =
             k1 == k2 && v1 == v2 && go kvs1 kvs2
+
+-------------------------------------------------------------------------------
+-- deepseq
+-------------------------------------------------------------------------------
+
+instance NFData v => NFData (Val v) where
+    rnf (Val _ v) = rnf v
+
+instance (NFData k, NFData v) => NFData (OMap k v) where
+    rnf (OMap m) = rnf m
 
 -------------------------------------------------------------------------------
 -- QuickCheck
