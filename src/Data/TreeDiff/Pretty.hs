@@ -30,10 +30,13 @@ import Data.TreeDiff.Expr
 import Numeric            (showHex)
 import Text.Read.Compat   (readMaybe)
 
-
 import qualified Data.Map                     as Map
 import qualified Text.PrettyPrint             as HJ
 import qualified Text.PrettyPrint.ANSI.Leijen as WL
+
+-- $setup
+-- >>> import qualified Data.Map as Map
+-- >>> import Data.TreeDiff.Expr
 
 -- | Because we don't want to commit to single pretty printing library,
 -- we use explicit dictionary.

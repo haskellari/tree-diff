@@ -94,6 +94,21 @@ import qualified Data.HashSet        as HS
 -- aeson
 import qualified Data.Aeson as Aeson
 
+-- $setup
+-- >>> :set -XDeriveGeneric
+-- >>> import Data.Foldable (traverse_)
+-- >>> import Data.Ratio ((%))
+-- >>> import Data.Time (Day (..))
+-- >>> import Data.Scientific (Scientific)
+-- >>> import GHC.Generics (Generic)
+-- >>> import qualified Data.ByteString.Char8 as BS8
+-- >>> import qualified Data.ByteString.Lazy.Char8 as LBS8
+-- >>> import Data.TreeDiff.Pretty
+
+-------------------------------------------------------------------------------
+-- Code
+-------------------------------------------------------------------------------
+
 -- | Difference between two 'ToExpr' values.
 --
 -- >>> let x = (1, Just 2) :: (Int, Maybe Int)
@@ -108,10 +123,10 @@ import qualified Data.Aeson as Aeson
 -- Foo {fooBool = [Just True], fooInt = Right -2 +3, fooString = "fo"}
 --
 -- >>> prettyEditExpr $ ediff (Foo (Right 42) [Just True, Just False] "old") (Foo (Right 42) [Nothing, Just False, Just True] "new")
--- Foo
---   {fooBool = [-Just True, +Nothing, Just False, +Just True],
---    fooInt = Right 42,
---    fooString = -"old" +"new"}
+-- Foo {
+--   fooBool = [-Just True, +Nothing, Just False, +Just True],
+--   fooInt = Right 42,
+--   fooString = -"old" +"new"}
 --
 ediff :: ToExpr a => a -> a -> Edit EditExpr
 ediff x y = exprDiff (toExpr x) (toExpr y)
@@ -524,17 +539,3 @@ instance (ToExpr k) => ToExpr (HS.HashSet k) where
 -------------------------------------------------------------------------------
 
 instance ToExpr Aeson.Value
-
--------------------------------------------------------------------------------
--- Doctest
--------------------------------------------------------------------------------
-
--- $setup
--- >>> :set -XDeriveGeneric
--- >>> import Data.Foldable (traverse_)
--- >>> import Data.Ratio ((%))
--- >>> import Data.Time (Day (..))
--- >>> import Data.Scientific (Scientific)
--- >>> import Data.TreeDiff.Pretty
--- >>> import qualified Data.ByteString.Char8 as BS8
--- >>> import qualified Data.ByteString.Lazy.Char8 as LBS8

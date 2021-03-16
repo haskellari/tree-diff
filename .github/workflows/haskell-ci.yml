@@ -21,31 +21,6 @@ on:
     branches:
       - master
 jobs:
-  irc:
-    name: Haskell-CI (IRC notification)
-    runs-on: ubuntu-18.04
-    needs:
-      - linux
-    if: ${{ always() }}
-    strategy:
-      fail-fast: false
-    steps:
-      - name: IRC success notification (irc.freenode.org#haskell-lens)
-        uses: Gottox/irc-message-action@v1.1
-        if: needs.linux.result == 'success'
-        with:
-          channel: "#haskell-lens"
-          message: "\x0313tree-diff\x03/\x0306${{ github.ref }}\x03 \x0314${{ github.sha }}\x03 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} The build succeeded."
-          nickname: github-actions
-          server: irc.freenode.org
-      - name: IRC failure notification (irc.freenode.org#haskell-lens)
-        uses: Gottox/irc-message-action@v1.1
-        if: needs.linux.result != 'success'
-        with:
-          channel: "#haskell-lens"
-          message: "\x0313tree-diff\x03/\x0306${{ github.ref }}\x03 \x0314${{ github.sha }}\x03 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} The build failed."
-          nickname: github-actions
-          server: irc.freenode.org
   linux:
     name: Haskell-CI - Linux - ${{ matrix.compiler }}
     runs-on: ubuntu-18.04
@@ -159,11 +134,6 @@ jobs:
       - name: update cabal index
         run: |
           $CABAL v2-update -v
-      - name: cache (tools)
-        uses: actions/cache@v2
-        with:
-          key: ${{ runner.os }}-${{ matrix.compiler }}-tools-89ca0588
-          path: ~/.haskell-ci-tools
       - name: install cabal-plan
         run: |
           mkdir -p $HOME/.cabal/bin
@@ -173,10 +143,15 @@ jobs:
           rm -f cabal-plan.xz
           chmod a+x $HOME/.cabal/bin/cabal-plan
           cabal-plan --version
-      - name: install doctest
+      - name: install cabal-docspec
         run: |
-          if [ $((! GHCJSARITH && HCNUMVER >= 80000 && HCNUMVER < 81000)) -ne 0 ] ; then $CABAL --store-dir=$HOME/.haskell-ci-tools/store v2-install $ARG_COMPILER --ignore-project -j2 doctest --constraint='doctest ^>=0.17' ; fi
-          if [ $((! GHCJSARITH && HCNUMVER >= 80000 && HCNUMVER < 81000)) -ne 0 ] ; then doctest --version ; fi
+          mkdir -p $HOME/.cabal/bin
+          curl -sL https://github.com/phadej/cabal-extras/releases/download/cabal-docspec-0.0.0.20210111/cabal-docspec-0.0.0.20210111.xz > cabal-docspec.xz
+          echo '0829bd034fba901cbcfe491d98ed8b28fd54f9cb5c91fa8e1ac62dc4413c9562  cabal-docspec.xz' | sha256sum -c -
+          xz -d < cabal-docspec.xz > $HOME/.cabal/bin/cabal-docspec
+          rm -f cabal-docspec.xz
+          chmod a+x $HOME/.cabal/bin/cabal-docspec
+          cabal-docspec --version
       - name: checkout
         uses: actions/checkout@v2
         with:
@@ -231,11 +206,10 @@ jobs:
       - name: tests
         run: |
           if [ $((! GHCJSARITH && HCNUMVER >= 70600)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --test-show-details=direct ; fi
-      - name: doctest
+      - name: docspec
         run: |
-          perl -i -e 'while (<ARGV>) { print unless /package-id\s+(base-compat-batteries)-\d+(\.\d+)*/; }' .ghc.environment.*
-          if [ $((! GHCJSARITH && HCNUMVER >= 80000 && HCNUMVER < 81000)) -ne 0 ] ; then cd ${PKGDIR_tree_diff} || false ; fi
-          if [ $((! GHCJSARITH && HCNUMVER >= 80000 && HCNUMVER < 81000)) -ne 0 ] ; then doctest --fast -D__DOCTEST__ src ; fi
+          if [ $((! GHCJSARITH && HCNUMVER >= 80000)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH all ; fi
+          if [ $((! GHCJSARITH && HCNUMVER >= 80000)) -ne 0 ] ; then cabal-docspec $ARG_COMPILER ; fi
       - name: cabal check
         run: |
           cd ${PKGDIR_tree_diff} || false
