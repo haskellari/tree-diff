@@ -12,8 +12,9 @@ module Data.TreeDiff.Expr (
 import Prelude ()
 import Prelude.Compat
 
-import Data.Semialign     (alignWith)
-import Data.These         (These (..))
+import Control.DeepSeq (NFData (..))
+import Data.Semialign  (alignWith)
+import Data.These      (These (..))
 
 import Data.TreeDiff.List
 import Data.TreeDiff.OMap (OMap)
@@ -35,6 +36,11 @@ data Expr
     | Rec ConstructorName (OMap FieldName Expr)  -- ^ record constructor
     | Lst [Expr]                                 -- ^ list constructor
   deriving (Eq, Show)
+
+instance NFData Expr where
+    rnf (App n es) = rnf n `seq` rnf es
+    rnf (Rec n fs) = rnf n `seq` rnf fs
+    rnf (Lst es)   = rnf es
 
 instance QC.Arbitrary Expr where
     arbitrary = QC.scale (min 25) $ QC.sized arb where
@@ -109,3 +115,9 @@ data EditExpr
     | EditLst [Edit EditExpr]
     | EditExp Expr  -- ^ unchanged tree
   deriving Show
+
+instance NFData EditExpr where
+    rnf (EditApp n es) = rnf n `seq` rnf es
+    rnf (EditRec n fs) = rnf n `seq` rnf fs
+    rnf (EditLst es)   = rnf es
+    rnf (EditExp e)    = rnf e
