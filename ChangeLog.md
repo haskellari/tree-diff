@@ -1,3 +1,8 @@
+## 0.2
+
+- Change the pretty printing to use less horizontal space.
+  `Pretty` datastructure is changed.
+
 ## 0.1
 
 - Support GHC-7.4 ... 8.8 (use allow-newer for GHC-8.8-alpha).

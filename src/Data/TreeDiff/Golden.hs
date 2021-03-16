@@ -1,7 +1,7 @@
 -- | "Golden tests" using 'ediff' comparison.
 module Data.TreeDiff.Golden (
     ediffGolden,
-    ) where
+) where
 
 import Data.TreeDiff
 import Prelude ()
@@ -10,9 +10,10 @@ import System.Console.ANSI (SGR (Reset), setSGRCode)
 import Text.Parsec         (eof, parse)
 import Text.Parsec.Text ()
 
-import qualified Data.ByteString    as BS
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as TE
+import qualified Data.ByteString              as BS
+import qualified Data.Text                    as T
+import qualified Data.Text.Encoding           as TE
+import qualified Text.PrettyPrint.ANSI.Leijen as WL
 
 -- | Make a golden tests.
 --
@@ -53,5 +54,8 @@ ediffGolden impl testName fp x = impl testName expect actual cmp wrt
     cmp a b
         | a == b    = return Nothing
         | otherwise = return $ Just $
-            setSGRCode [Reset] ++ show (ansiWlEditExprCompact $ ediff a b)
-    wrt expr = BS.writeFile fp $ TE.encodeUtf8 $ T.pack $ show (prettyExpr expr) ++ "\n"
+            setSGRCode [Reset] ++ showWL (ansiWlEditExprCompact $ ediff a b)
+    wrt expr = BS.writeFile fp $ TE.encodeUtf8 $ T.pack $ showWL (WL.plain (ansiWlExpr expr)) ++ "\n"
+
+showWL :: WL.Doc -> String
+showWL doc = WL.displayS (WL.renderSmart 0.4 80 doc) ""

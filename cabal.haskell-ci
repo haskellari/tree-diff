@@ -1,8 +1,4 @@
 branches: master
-tests: >=7.6
-haddock: >=7.8
-doctest: <8.10
-doctest-options: --fast -D__DOCTEST__
-doctest-filter-packages: base-compat-batteries
-
-irc-channels: irc.freenode.org#haskell-lens
+tests:    >=7.6
+haddock:  >=7.8
+docspec:  >=8

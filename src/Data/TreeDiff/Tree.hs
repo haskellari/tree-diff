@@ -5,9 +5,30 @@ module Data.TreeDiff.Tree (treeDiff, EditTree (..), Edit (..)) where
 import Data.Tree          (Tree (..))
 import Data.TreeDiff.List
 
-#ifdef __DOCTEST__
-import qualified Text.PrettyPrint as PP
-#endif
+-- $setup
+-- >>> import Data.Tree (Tree (..))
+-- >>> import qualified Text.PrettyPrint as PP
+-- >>> :{
+-- ppTree :: (a -> PP.Doc) -> Tree a -> PP.Doc
+-- ppTree pp = ppT
+--   where
+--     ppT (Node x []) = pp x
+--     ppT (Node x xs) = PP.parens $ PP.hang (pp x) 2 $
+--         PP.sep $ map ppT xs
+-- ppEditTree :: (a -> PP.Doc) -> Edit (EditTree a) -> PP.Doc
+-- ppEditTree pp = PP.sep . ppEdit
+--   where
+--     ppEdit (Cpy tree) = [ ppTree tree ]
+--     ppEdit (Ins tree) = [ PP.char '+' PP.<> ppTree tree ]
+--     ppEdit (Del tree) = [ PP.char '-' PP.<> ppTree tree ]
+--     ppEdit (Swp a b) =
+--         [ PP.char '-' PP.<> ppTree a
+--         , PP.char '+' PP.<> ppTree b
+--         ]
+--     ppTree (EditNode x []) = pp x
+--     ppTree (EditNode x xs) = PP.parens $ PP.hang (pp x) 2 $
+--        PP.sep $ concatMap ppEdit xs
+-- :}
 
 -- | A breadth-traversal diff.
 --
@@ -72,27 +93,3 @@ data EditTree a
 
 treeToEdit :: Tree a -> EditTree a
 treeToEdit = go where go (Node x xs) = EditNode x (map (Cpy . go) xs)
-
-#ifdef __DOCTEST__
-ppTree :: (a -> PP.Doc) -> Tree a -> PP.Doc
-ppTree pp = ppT
-  where
-    ppT (Node x []) = pp x
-    ppT (Node x xs) = PP.parens $ PP.hang (pp x) 2 $
-        PP.sep $ map ppT xs
-
-ppEditTree :: (a -> PP.Doc) -> Edit (EditTree a) -> PP.Doc
-ppEditTree pp = PP.sep . ppEdit
-  where
-    ppEdit (Cpy tree) = [ ppTree tree ]
-    ppEdit (Ins tree) = [ PP.char '+' PP.<> ppTree tree ]
-    ppEdit (Del tree) = [ PP.char '-' PP.<> ppTree tree ]
-    ppEdit (Swp a b) =
-        [ PP.char '-' PP.<> ppTree a
-        , PP.char '+' PP.<> ppTree b
-        ]
-
-    ppTree (EditNode x []) = pp x
-    ppTree (EditNode x xs) = PP.parens $ PP.hang (pp x) 2 $
-       PP.sep $ concatMap ppEdit xs
-#endif
