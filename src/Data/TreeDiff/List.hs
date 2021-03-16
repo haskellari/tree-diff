@@ -67,7 +67,7 @@ diffBy eq xs' ys' = reverse (snd (lcs xn yn))
 
         edit
             | eq x y    = bimap id   (Cpy x :)   (lcs (n - 1) (m - 1))
-            | otherwise = bimap (+1) (Swp x y :) (lcs (n -1 ) (m - 1))
+            | otherwise = bimap (+1) (Swp x y :) (lcs (n - 1) (m - 1))
 
 bimap :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
 bimap f g (x, y) = (f x, g y)
