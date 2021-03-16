@@ -22,7 +22,7 @@ module Data.TreeDiff.Pretty (
     ansiWlBgEditExprCompact,
     -- * Utilities
     escapeName,
-    ) where
+) where
 
 import Data.Char          (isAlphaNum, isPunctuation, isSymbol, ord)
 import Data.Either        (partitionEithers)
@@ -38,15 +38,16 @@ import qualified Text.PrettyPrint.ANSI.Leijen as WL
 -- | Because we don't want to commit to single pretty printing library,
 -- we use explicit dictionary.
 data Pretty doc = Pretty
-    { ppCon        :: ConstructorName -> doc
-    , ppRec        :: [(FieldName, doc)] -> doc
-    , ppLst        :: [doc] -> doc
-    , ppCpy        :: doc -> doc
-    , ppIns        :: doc -> doc
-    , ppDel        :: doc -> doc
-    , ppSep        :: [doc] -> doc
-    , ppParens     :: doc -> doc
-    , ppHang       :: doc -> doc -> doc
+    { ppCon    :: ConstructorName -> doc            -- ^ Display 'ConstructorName'
+    , ppApp    :: doc -> [doc] -> doc               -- ^ Display 'App'
+    , ppRec    :: doc -> [(FieldName, doc)] -> doc  -- ^ Display 'Rec'
+    , ppLst    :: [doc] -> doc                      -- ^ Display 'Lst'
+    , ppCpy    :: doc -> doc                        -- ^ Display unchanged parts
+    , ppIns    :: doc -> doc                        -- ^ Display added parts
+    , ppDel    :: doc -> doc                        -- ^ Display removed parts
+    , ppEdits  :: [doc] -> doc                      -- ^ Combined edits (usually some @sep@ combinator)
+    , ppEllip  :: doc                               -- ^ Ellipsis
+    , ppParens :: doc -> doc                        -- ^ Parens an expression
     }
 
 -- | Escape field or constructor name
@@ -112,9 +113,8 @@ ppExpr p = ppExpr' p False
 ppExpr' :: Pretty doc -> Bool -> Expr -> doc
 ppExpr' p = impl where
     impl _ (App x []) = ppCon p (escapeName x)
-    impl b (App x xs) = ppParens' b $ ppHang p (ppCon p (escapeName x)) $
-        ppSep p $ map (impl True) xs
-    impl _ (Rec x xs) = ppHang p (ppCon p (escapeName x)) $ ppRec p $
+    impl b (App x xs) = ppParens' b $ ppApp p (ppCon p (escapeName x)) (map (impl True) xs)
+    impl _ (Rec x xs) = ppRec p (ppCon p (escapeName x)) $
         map ppField' $ Map.toList xs
     impl _ (Lst xs)   = ppLst p (map (impl False) xs)
 
@@ -132,8 +132,10 @@ ppEditExprCompact :: Pretty doc -> Edit EditExpr -> doc
 ppEditExprCompact = ppEditExpr' True
 
 ppEditExpr' :: Bool -> Pretty doc -> Edit EditExpr -> doc
-ppEditExpr' compact p = ppSep p . ppEdit False
+ppEditExpr' compact p = go
   where
+    go = ppEdits p . ppEdit False
+
     ppEdit b (Cpy (EditExp expr)) = [ ppCpy p $ ppExpr' p b expr ]
     ppEdit b (Cpy expr) = [ ppEExpr b expr ]
     ppEdit b (Ins expr) = [ ppIns p (ppEExpr b expr) ]
@@ -144,10 +146,9 @@ ppEditExpr' compact p = ppSep p . ppEdit False
         ]
 
     ppEExpr _ (EditApp x []) = ppCon p (escapeName x)
-    ppEExpr b (EditApp x xs) = ppParens' b $ ppHang p (ppCon p (escapeName x)) $
-        ppSep p $ concatMap (ppEdit True) xs
-    ppEExpr _ (EditRec x xs) = ppHang p (ppCon p (escapeName x)) $ ppRec p $
-        justs ++ [ (n, ppCon p "...") | n <- take 1 nothings ]
+    ppEExpr b (EditApp x xs) = ppParens' b $ ppApp p (ppCon p (escapeName x)) (concatMap (ppEdit True) xs)
+    ppEExpr _ (EditRec x xs) = ppRec p (ppCon p (escapeName x)) $
+        justs ++ [ (n, ppEllip p) | n <- take 1 nothings ]
       where
         xs' = map ppField' $ Map.toList xs
         (nothings, justs) = partitionEithers xs'
@@ -156,7 +157,7 @@ ppEditExpr' compact p = ppSep p . ppEdit False
     ppEExpr b (EditExp x)    = ppExpr' p b x
 
     ppField' (n, Cpy (EditExp e)) | compact, not (isScalar e) = Left n
-    ppField' (n, e) = Right (escapeName n, ppSep p $ ppEdit False e)
+    ppField' (n, e) = Right (escapeName n, go e)
 
     ppParens' True  = ppParens p
     ppParens' False = id
@@ -172,16 +173,25 @@ ppEditExpr' compact p = ppSep p . ppEdit False
 prettyPretty :: Pretty HJ.Doc
 prettyPretty = Pretty
     { ppCon    = HJ.text
-    , ppRec    = HJ.braces . HJ.sep . HJ.punctuate HJ.comma
-               . map (\(fn, d) -> HJ.text fn HJ.<+> HJ.equals HJ.<+> d)
-    , ppLst    = HJ.brackets . HJ.sep . HJ.punctuate HJ.comma
+    , ppRec    = \c xs -> prettyGroup (c HJ.<+> HJ.char '{') (HJ.char '}')
+               $ map (\(fn, d) -> HJ.sep [HJ.text fn HJ.<+> HJ.equals, d]) xs
+    , ppLst    = prettyGroup (HJ.char '[') (HJ.char ']')
     , ppCpy    = id
     , ppIns    = \d -> HJ.char '+' HJ.<> d
     , ppDel    = \d -> HJ.char '-' HJ.<> d
-    , ppSep    = HJ.sep
+    , ppEdits  = HJ.sep
+    , ppEllip  = HJ.text "..."
+    , ppApp    = \f xs -> HJ.sep [ f, HJ.nest 2 $ HJ.sep xs ]
     , ppParens = HJ.parens
-    , ppHang   = \d1 d2 -> HJ.hang d1 2 d2
     }
+
+prettyGroup :: HJ.Doc -> HJ.Doc -> [HJ.Doc] -> HJ.Doc
+prettyGroup l r xs = HJ.cat [l, HJ.sep (map (HJ.nest 2) (prettyPunct (HJ.char ',') r xs))]
+
+prettyPunct :: HJ.Doc -> HJ.Doc -> [HJ.Doc] -> [HJ.Doc]
+prettyPunct _   end []     = [end]
+prettyPunct _   end [x]    = [x HJ.<> end]
+prettyPunct sep end (x:xs) = (x HJ.<> sep) : prettyPunct sep end xs
 
 -- | Pretty print 'Expr' using @pretty@.
 --
@@ -206,16 +216,20 @@ prettyEditExprCompact = ppEditExprCompact prettyPretty
 ansiWlPretty :: Pretty WL.Doc
 ansiWlPretty = Pretty
     { ppCon    = WL.text
-    , ppRec    = WL.encloseSep WL.lbrace WL.rbrace WL.comma
-               . map (\(fn, d) -> WL.text fn WL.<+> WL.equals WL.</> d)
-    , ppLst    = WL.list
+    , ppRec    = \c xs -> ansiGroup (c WL.<+> WL.lbrace) WL.rbrace
+               $ map (\(fn, d) -> WL.text fn WL.<+> WL.equals WL.</> d) xs
+    , ppLst    = ansiGroup WL.lbracket WL.rbracket
     , ppCpy    = WL.dullwhite
     , ppIns    = \d -> WL.green $ WL.plain $ WL.char '+' WL.<> d
     , ppDel    = \d -> WL.red   $ WL.plain $ WL.char '-' WL.<> d
-    , ppSep    = WL.sep
+    , ppApp    = \f xs -> WL.group $ WL.nest 2 $ f WL.<$> WL.vsep xs
+    , ppEdits  = WL.sep
+    , ppEllip  = WL.text "..."
     , ppParens = WL.parens
-    , ppHang   = \d1 d2 -> WL.hang 2 (d1 WL.</> d2)
     }
+
+ansiGroup :: WL.Doc -> WL.Doc -> [WL.Doc] -> WL.Doc
+ansiGroup l r xs = WL.group $ WL.nest 2 (l WL.<$$> WL.vsep (WL.punctuate WL.comma xs) WL.<> r)
 
 -- | Pretty print 'Expr' using @ansi-wl-pprint@.
 ansiWlExpr :: Expr -> WL.Doc
