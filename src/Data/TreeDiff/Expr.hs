@@ -12,11 +12,14 @@ module Data.TreeDiff.Expr (
 import Prelude ()
 import Prelude.Compat
 
-import Data.Map           (Map)
-import Data.TreeDiff.List
+import Data.Semialign     (alignWith)
+import Data.These         (These (..))
 
-import qualified Data.Map        as Map
-import qualified Test.QuickCheck as QC
+import Data.TreeDiff.List
+import Data.TreeDiff.OMap (OMap)
+
+import qualified Data.TreeDiff.OMap as OMap
+import qualified Test.QuickCheck    as QC
 
 -- | Constructor name is a string
 type ConstructorName = String
@@ -29,7 +32,7 @@ type FieldName       = String
 -- Having richer structure than just 'Tree' allows to have richer diffs.
 data Expr
     = App ConstructorName [Expr]                 -- ^ application
-    | Rec ConstructorName (Map FieldName Expr)   -- ^ record constructor
+    | Rec ConstructorName (OMap FieldName Expr)  -- ^ record constructor
     | Lst [Expr]                                 -- ^ list constructor
   deriving (Eq, Show)
 
@@ -37,7 +40,7 @@ instance QC.Arbitrary Expr where
     arbitrary = QC.scale (min 25) $ QC.sized arb where
         arb n | n <= 0 = QC.oneof
             [ (`App` []) <$> arbName
-            ,  (`Rec` mempty) <$> arbName
+            ,  (`Rec` OMap.empty) <$> arbName
             ]
               | otherwise = do
             n' <- QC.choose (0, n `div` 3)
@@ -49,7 +52,7 @@ instance QC.Arbitrary Expr where
 
     shrink (Lst es)   = es
         ++ [ Lst es'    | es' <- QC.shrink es ]
-    shrink (Rec n fs) = Map.elems fs
+    shrink (Rec n fs) = OMap.elems fs
         ++ [ Rec n' fs  | n'  <- QC.shrink n  ]
         ++ [ Rec n  fs' | fs' <- QC.shrink fs ]
     shrink (App n es) = es
@@ -72,16 +75,22 @@ exprDiff = impl
   where
     impl ea eb | ea == eb = Cpy (EditExp ea)
 
+    -- application
     impl ea@(App a as) eb@(App b bs)
-        | a == b = Cpy $ EditApp a (map recurse (diffBy (==) as bs))
+        | a == b    = Cpy $ EditApp a (map recurse (diffBy (==) as bs))
         | otherwise = Swp (EditExp ea) (EditExp eb)
+
+    -- records
     impl ea@(Rec a as) eb@(Rec b bs)
-        | a == b = Cpy $ EditRec a $ Map.unions [inter, onlyA, onlyB]
+        | a == b    = Cpy $ EditRec a $ alignWith cls as bs
         | otherwise = Swp (EditExp ea) (EditExp eb)
       where
-        inter = Map.intersectionWith exprDiff as bs
-        onlyA = fmap (Del . EditExp) (Map.difference as inter)
-        onlyB = fmap (Ins . EditExp) (Map.difference bs inter)
+        cls :: These Expr Expr -> Edit EditExpr
+        cls (This x) = Del (EditExp x)
+        cls (That y) = Ins (EditExp y)
+        cls (These x y) = exprDiff x y
+
+    -- lists
     impl (Lst as) (Lst bs) =
         Cpy $ EditLst (map recurse (diffBy (==) as bs))
 
@@ -96,7 +105,7 @@ exprDiff = impl
 -- | Type used in the result of 'ediff'.
 data EditExpr
     = EditApp ConstructorName [Edit EditExpr]
-    | EditRec ConstructorName (Map FieldName (Edit EditExpr))
+    | EditRec ConstructorName (OMap FieldName (Edit EditExpr))
     | EditLst [Edit EditExpr]
     | EditExp Expr  -- ^ unchanged tree
   deriving Show

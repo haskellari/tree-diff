@@ -28,6 +28,7 @@ import GHC.Generics
        M1 (..), Selector (..), U1 (..), V1)
 
 import qualified Data.Map as Map
+import qualified Data.TreeDiff.OMap as OMap
 
 import Data.TreeDiff.Expr
 
@@ -126,12 +127,12 @@ import Data.These (These (..))
 -- >>> instance ToExpr Foo
 --
 -- >>> prettyEditExpr $ ediff (Foo (Right 2) [Just True] "fo") (Foo (Right 3) [Just True] "fo")
--- Foo {fooBool = [Just True], fooInt = Right -2 +3, fooString = "fo"}
+-- Foo {fooInt = Right -2 +3, fooBool = [Just True], fooString = "fo"}
 --
 -- >>> prettyEditExpr $ ediff (Foo (Right 42) [Just True, Just False] "old") (Foo (Right 42) [Nothing, Just False, Just True] "new")
 -- Foo {
---   fooBool = [-Just True, +Nothing, Just False, +Just True],
 --   fooInt = Right 42,
+--   fooBool = [-Just True, +Nothing, Just False, +Just True],
 --   fooString = -"old" +"new"}
 --
 ediff :: ToExpr a => a -> a -> Edit EditExpr
@@ -200,7 +201,7 @@ instance (Constructor c, GProductToExpr f) => GSumToExpr (M1 i c f) where
         App' exprs   -> App cn exprs
         Rec' []      -> App cn []
         Rec' [(_,e)] -> App cn [e]
-        Rec' pairs   -> Rec cn (Map.fromList pairs)
+        Rec' pairs   -> Rec cn (OMap.fromList pairs)
       where
         cn = conName z
 

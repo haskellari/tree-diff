@@ -18,7 +18,7 @@ import Text.Parser.Token.Highlight
 
 import Data.TreeDiff.Expr
 
-import qualified Data.Map as Map
+import qualified Data.TreeDiff.OMap as OMap
 
 -- | Parsers for 'Expr' using @parsers@ type-classes.
 --
@@ -47,7 +47,7 @@ litP = atomP <|> identP <|> stringP
 recP :: forall m. (Monad m, TokenParsing m) => m (Either String Expr)
 recP = mk <$> litP <*> optional (braces (commaSep fieldP)) where
     mk n Nothing   = Left n
-    mk n (Just fs) = Right (Rec n (Map.fromList fs))
+    mk n (Just fs) = Right (Rec n (OMap.fromList fs))
 
 litP' :: forall m. (Monad m, TokenParsing m) => m Expr
 litP' = mk <$> recP <|> parens exprParser <|> lstP

@@ -2,6 +2,7 @@
 
 - Change the pretty printing to use less horizontal space.
   `Pretty` datastructure is changed.
+- Change `Expr` to use `OMap`; pretty-printing preserves field order.
 - Add `strict` and `these` instances
 - Bump lower bounds
 

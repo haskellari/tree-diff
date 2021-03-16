@@ -30,12 +30,12 @@ import Data.TreeDiff.Expr
 import Numeric            (showHex)
 import Text.Read.Compat   (readMaybe)
 
-import qualified Data.Map                     as Map
+import qualified Data.TreeDiff.OMap           as OMap
 import qualified Text.PrettyPrint             as HJ
 import qualified Text.PrettyPrint.ANSI.Leijen as WL
 
 -- $setup
--- >>> import qualified Data.Map as Map
+-- >>> import qualified Data.TreeDiff.OMap as OMap
 -- >>> import Data.TreeDiff.Expr
 
 -- | Because we don't want to commit to single pretty printing library,
@@ -118,7 +118,7 @@ ppExpr' p = impl where
     impl _ (App x []) = ppCon p (escapeName x)
     impl b (App x xs) = ppParens' b $ ppApp p (ppCon p (escapeName x)) (map (impl True) xs)
     impl _ (Rec x xs) = ppRec p (ppCon p (escapeName x)) $
-        map ppField' $ Map.toList xs
+        map ppField' $ OMap.toList xs
     impl _ (Lst xs)   = ppLst p (map (impl False) xs)
 
     ppField' (n, e) = (escapeName n, impl False e)
@@ -153,7 +153,7 @@ ppEditExpr' compact p = go
     ppEExpr _ (EditRec x xs) = ppRec p (ppCon p (escapeName x)) $
         justs ++ [ (n, ppEllip p) | n <- take 1 nothings ]
       where
-        xs' = map ppField' $ Map.toList xs
+        xs' = map ppField' $ OMap.toList xs
         (nothings, justs) = partitionEithers xs'
 
     ppEExpr _ (EditLst xs)   = ppLst p (concatMap (ppEdit False) xs)
@@ -198,7 +198,7 @@ prettyPunct sep end (x:xs) = (x HJ.<> sep) : prettyPunct sep end xs
 
 -- | Pretty print 'Expr' using @pretty@.
 --
--- >>> prettyExpr $ Rec "ex" (Map.fromList [("[]", App "bar" [])])
+-- >>> prettyExpr $ Rec "ex" (OMap.fromList [("[]", App "bar" [])])
 -- ex {`[]` = bar}
 prettyExpr :: Expr -> HJ.Doc
 prettyExpr = ppExpr prettyPretty
