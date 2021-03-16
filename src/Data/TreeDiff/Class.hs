@@ -94,6 +94,12 @@ import qualified Data.HashSet        as HS
 -- aeson
 import qualified Data.Aeson as Aeson
 
+-- strict
+import qualified Data.Strict as Strict
+
+-- these
+import Data.These (These (..))
+
 -- $setup
 -- >>> :set -XDeriveGeneric
 -- >>> import Data.Foldable (traverse_)
@@ -539,3 +545,28 @@ instance (ToExpr k) => ToExpr (HS.HashSet k) where
 -------------------------------------------------------------------------------
 
 instance ToExpr Aeson.Value
+
+-------------------------------------------------------------------------------
+-- strict
+-------------------------------------------------------------------------------
+
+instance ToExpr a => ToExpr (Strict.Maybe a) where
+    toExpr = toExpr . Strict.toLazy
+
+instance (ToExpr a, ToExpr b) => ToExpr (Strict.Either a b) where
+    toExpr = toExpr . Strict.toLazy
+
+instance (ToExpr a, ToExpr b) => ToExpr (Strict.These a b) where
+    toExpr = toExpr . Strict.toLazy
+
+instance (ToExpr a, ToExpr b) => ToExpr (Strict.Pair a b) where
+    toExpr = toExpr . Strict.toLazy
+
+-------------------------------------------------------------------------------
+-- these
+-------------------------------------------------------------------------------
+
+instance (ToExpr a, ToExpr b) => ToExpr (These a b) where
+    toExpr (This x)    = App "This" [toExpr x]
+    toExpr (That y)    = App "That" [toExpr y]
+    toExpr (These x y) = App "These " [toExpr x, toExpr y]
