@@ -2,3 +2,8 @@ branches: master
 tests:    >=7.6
 haddock:  >=7.8
 docspec:  >=8
+
+-- We would like to have this. But it just doesn't work with GHCJS
+-- constraint-set bytestring-0.11
+--   ghc:         >=7.8
+--   constraints: bytestring ^>=0.11
