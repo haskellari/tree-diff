@@ -180,4 +180,6 @@ benchmark tree-diff-bench
     , tree-diff
 
   -- extra dependencies
-  build-depends:    criterion ^>=1.5.9.0, Diff ^>=0.4.0
+  build-depends:
+    , criterion  ^>=1.5.9.0
+    , Diff       ^>=0.4.0
