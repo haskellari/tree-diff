@@ -1,6 +1,9 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric, ScopedTypeVariables #-}
 -- | A list diff.
 module Data.TreeDiff.List (diffBy, Edit (..)) where
+
+import GHC.Generics (Generic, Generic1)
+import Control.DeepSeq
 
 -- | List edit operations
 --
@@ -11,7 +14,10 @@ data Edit a
     | Del a    -- ^ delete
     | Cpy a    -- ^ copy unchanged
     | Swp a a  -- ^ swap, i.e. delete + insert
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Generic1, Show)
+
+instance NFData a => NFData (Edit a)
+instance NFData1 Edit
 
 type WEdit a = (Int, [Edit a])
 type WEdits a = [WEdit a]

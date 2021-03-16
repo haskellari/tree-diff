@@ -41,12 +41,12 @@ main :: IO ()
 main = do
   CM.defaultMainWith myConfig [
       CM.bgroup "small" [
-          CM.bench "newDiff" $ CM.whnf (uncurry (diffBy (==))) (listsa, listsb)
-        , CM.bench "oldDiff" $ CM.whnf (uncurry (oldDiffBy (==))) (listsa, listsb)
+          CM.bench "newDiff" $ CM.nf (uncurry (diffBy (==) :: [Int] -> [Int] -> [Edit Int])) (listsa, listsb)
+        , CM.bench "oldDiff" $ CM.nf (uncurry (oldDiffBy (==) :: [Int] -> [Int] -> [Edit Int])) (listsa, listsb)
       ]
     , CM.bgroup "big" [
-          CM.bench "newDiff" $ CM.whnf (uncurry (diffBy (==))) (listba, listbb)
-        , CM.bench "oldDiff" $ CM.whnf (uncurry (oldDiffBy (==))) (listba, listbb)
+          CM.bench "newDiff" $ CM.nf (uncurry (diffBy (==) :: [Int] -> [Int] -> [Edit Int])) (listba, listbb)
+        , CM.bench "oldDiff" $ CM.nf (uncurry (oldDiffBy (==) :: [Int] -> [Int] -> [Edit Int])) (listba, listbb)
       ]
     ]
   defaultMain $ testGroup "tests"
