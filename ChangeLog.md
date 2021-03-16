@@ -2,6 +2,8 @@
 
 - Change the pretty printing to use less horizontal space.
   `Pretty` datastructure is changed.
+- Add `strict` and `these` instances
+- Bump lower bounds
 
 ## 0.1
 
