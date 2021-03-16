@@ -21,8 +21,35 @@ import qualified Text.PrettyPrint.ANSI.Leijen as WL
 import qualified Text.Trifecta                as T (eof, parseString)
 import qualified Text.Trifecta.Result         as T (ErrInfo (..), Result (..))
 
+import Criterion.Main.Options(defaultConfig)
+import Criterion.Types(Config(..))
+import qualified Criterion.Main as CM -- (defaultMainWith, whnf, bench)
+
+myConfig = defaultConfig {
+              -- Resample 10 times for bootstrapping
+              resamples = 1000
+            , csvFile=Just "tests.csv"
+           }
+
+listsa = [0, 5 .. 100]
+listsb = [0, 3 .. 72]
+
+listba = [0, 5 .. 10000]
+listbb = [0, 3 .. 7200]
+
 main :: IO ()
-main = defaultMain $ testGroup "tests"
+main = do
+  CM.defaultMainWith myConfig [
+      CM.bgroup "small" [
+          CM.bench "newDiff" $ CM.whnf (uncurry (diffBy (==))) (listsa, listsb)
+        , CM.bench "oldDiff" $ CM.whnf (uncurry (oldDiffBy (==))) (listsa, listsb)
+      ]
+    , CM.bgroup "big" [
+          CM.bench "newDiff" $ CM.whnf (uncurry (diffBy (==))) (listba, listbb)
+        , CM.bench "oldDiff" $ CM.whnf (uncurry (oldDiffBy (==))) (listba, listbb)
+      ]
+    ]
+  defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
     , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
     , testProperty "check validity new diffBy" checkEquivalentDiffBy
