@@ -138,12 +138,14 @@ library
   hs-source-dirs:   src
   default-language: Haskell2010
 
-test-suite test
+test-suite tree-diff-test
   default-language: Haskell2010
   type:             exitcode-stdio-1.0
   main-is:          Tests.hs
   hs-source-dirs:   tests
   ghc-options:      -Wall -threaded
+
+  -- dependencies from library
   build-depends:
     , ansi-terminal
     , ansi-wl-pprint
@@ -152,11 +154,30 @@ test-suite test
     , parsec
     , QuickCheck
     , tagged
-    , tasty             ^>=1.2 || ^>=1.3.1
-    , tasty-golden      ^>=2.3.1.1
-    , tasty-quickcheck  ^>=0.10.1
     , tree-diff
-    , trifecta          >=2       && <2.2
 
   if impl(ghc <7.5)
     build-depends: ghc-prim
+
+  -- extra dependencies
+  build-depends:
+    , tasty             ^>=1.2 || ^>=1.3.1
+    , tasty-golden      ^>=2.3.1.1
+    , tasty-quickcheck  ^>=0.10.1
+    , trifecta          >=2       && <2.2
+
+benchmark tree-diff-bench
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          tree-diff-bench.hs
+  hs-source-dirs:   bench
+  ghc-options:      -Wall -threaded
+
+  -- dependencies from library
+  build-depends:
+    , base
+    , deepseq
+    , tree-diff
+
+  -- extra dependencies
+  build-depends:    criterion ^>=1.5.9.0, Diff ^>=0.4.0
