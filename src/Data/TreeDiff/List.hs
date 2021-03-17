@@ -73,11 +73,11 @@ diffBy eq xs' ys'
             P.writeArray buf2 m cell
             -- traceShowM ("init", m, cell)
             return cell
- 
+
         -- following rows
         --
-        -- cellC cellT       
-        -- cellL cellX  
+        -- cellC cellT
+        -- cellL cellX
         (buf1final, _, _) <- xLoop (buf1, buf2, Cell 0 []) $ \n (prev, curr, cellC) -> do
             -- prevZ <- P.unsafeFreezeArray prev
             -- currZ <- P.unsafeFreezeArray prev
@@ -105,13 +105,13 @@ diffBy eq xs' ys'
                         | eq x y    = bimap id   (Cpy x :)   cellC'
                         | otherwise = bimap (+1) (Swp x y :) cellC'
 
-                -- from top
-                let cellX2 :: Cell [Edit a]
-                    cellX2 = bimap (+1) (Del x :) cellT
-
                 -- from left
+                let cellX2 :: Cell [Edit a]
+                    cellX2 = bimap (+1) (Ins y :) cellL'
+
+                -- from top
                 let cellX3 :: Cell [Edit a]
-                    cellX3 = bimap (+1) (Ins y :) cellL'
+                    cellX3 = bimap (+1) (Del x :) cellT
 
                 -- the actual cell is best of three
                 let cellX :: Cell [Edit a]
@@ -125,7 +125,7 @@ diffBy eq xs' ys'
                 return (cellT, cellX)
 
             return (curr, prev, cellL)
-                
+
         P.readArray buf1final (yn - 1)
 
     xLoop :: acc -> (Int -> acc -> ST s acc) -> ST s acc

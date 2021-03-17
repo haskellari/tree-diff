@@ -27,6 +27,7 @@ main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
     , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
+    , testProperty "diffBy example1" $ diffByModel [7,1,6,0,0] [0,0,6,7,1,0,0]
     , testProperty "diffBy model" diffByModel
     , goldenTests
     ]
