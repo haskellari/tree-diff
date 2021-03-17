@@ -41,9 +41,6 @@ instance NFData a => NFData (Edit a) where
 -- prop> \xs ys -> length (diffBy (==) xs ys) >= max (length xs) (length (ys :: String))
 -- prop> \xs ys -> length (diffBy (==) xs ys) <= length xs + length (ys :: String)
 --
--- /Note:/ currently this has O(n*m) memory requirements, for the sake
--- of more obviously correct implementation.
---
 diffBy :: forall a. Show a => (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
 diffBy _  [] []   = []
 diffBy _  []  ys' = map Ins ys'
