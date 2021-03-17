@@ -101,6 +101,9 @@ import qualified Data.Strict as Strict
 -- these
 import Data.These (These (..))
 
+-- primitive
+-- import qualified Data.Primitive as Prim
+
 -- $setup
 -- >>> :set -XDeriveGeneric
 -- >>> import Data.Foldable (traverse_)
@@ -571,3 +574,9 @@ instance (ToExpr a, ToExpr b) => ToExpr (These a b) where
     toExpr (This x)    = App "This" [toExpr x]
     toExpr (That y)    = App "That" [toExpr y]
     toExpr (These x y) = App "These " [toExpr x, toExpr y]
+
+-------------------------------------------------------------------------------
+-- primitive
+-------------------------------------------------------------------------------
+
+-- TODO: add instances

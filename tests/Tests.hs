@@ -1,10 +1,7 @@
-{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Main (main) where
 
 import Data.Proxy                 (Proxy (..))
-import Data.TreeDiff
-import Data.TreeDiff.Golden
-import Data.TreeDiff.QuickCheck
 import GHC.Generics               (Generic)
 import Prelude ()
 import Prelude.Compat
@@ -18,6 +15,10 @@ import qualified Text.PrettyPrint.ANSI.Leijen as WL
 import qualified Text.Trifecta                as T (eof, parseString)
 import qualified Text.Trifecta.Result         as T (ErrInfo (..), Result (..))
 
+import Data.TreeDiff
+import Data.TreeDiff.Golden
+import Data.TreeDiff.QuickCheck
+
 main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
@@ -26,7 +27,7 @@ main = defaultMain $ testGroup "tests"
     ]
 
 -------------------------------------------------------------------------------
--- QuickCheck: ediffEq
+-- Roundtrip
 -------------------------------------------------------------------------------
 
 -- | This property tests that we can parse pretty printed 'Expr'.
