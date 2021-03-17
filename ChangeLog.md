@@ -4,6 +4,7 @@
   `Pretty` datastructure is changed.
 - Change `Expr` to use `OMap`; pretty-printing preserves field order.
 - Add `strict` and `these` instances
+- Add `Eq` and `NFData (Edit a)` instances.
 - Bump lower bounds
 
 ## 0.1

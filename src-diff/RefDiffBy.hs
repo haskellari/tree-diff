@@ -1,45 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
--- | A list diff.
-module Data.TreeDiff.List (
-    diffBy,
-    Edit (..),
-) where
+module RefDiffBy (diffBy) where
 
-import Control.DeepSeq (NFData (..))
+import Data.TreeDiff.List (Edit (..))
 
 import qualified Data.Primitive as P
 
--- | List edit operations
---
--- The 'Swp' constructor is redundant, but it let us spot
--- a recursion point when performing tree diffs.
-data Edit a
-    = Ins a    -- ^ insert
-    | Del a    -- ^ delete
-    | Cpy a    -- ^ copy unchanged
-    | Swp a a  -- ^ swap, i.e. delete + insert
-  deriving (Eq, Show)
-
-instance NFData a => NFData (Edit a) where
-    rnf (Ins x)   = rnf x
-    rnf (Del x)   = rnf x
-    rnf (Cpy x)   = rnf x
-    rnf (Swp x y) = rnf x `seq` rnf y
-
--- | List difference.
---
--- >>> diffBy (==) "hello" "world"
--- [Swp 'h' 'w',Swp 'e' 'o',Swp 'l' 'r',Cpy 'l',Swp 'o' 'd']
---
--- >>> diffBy (==) "kitten" "sitting"
--- [Swp 'k' 's',Cpy 'i',Cpy 't',Cpy 't',Swp 'e' 'i',Cpy 'n',Ins 'g']
---
--- prop> \xs ys -> length (diffBy (==) xs ys) >= max (length xs) (length (ys :: String))
--- prop> \xs ys -> length (diffBy (==) xs ys) <= length xs + length (ys :: String)
---
--- /Note:/ currently this has O(n*m) memory requirements, for the sake
--- of more obviously correct implementation.
---
 diffBy :: forall a. (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
 diffBy eq xs' ys' = reverse (getCell (lcs xn yn))
   where

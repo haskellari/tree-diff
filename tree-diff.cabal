@@ -143,8 +143,9 @@ test-suite tree-diff-test
   default-language: Haskell2010
   type:             exitcode-stdio-1.0
   main-is:          Tests.hs
-  hs-source-dirs:   tests
+  hs-source-dirs:   tests src-diff
   ghc-options:      -Wall -threaded
+  other-modules:    RefDiffBy
 
   -- dependencies from library
   build-depends:
@@ -153,6 +154,7 @@ test-suite tree-diff-test
     , base
     , base-compat
     , parsec
+    , primitive
     , QuickCheck
     , tagged
     , tree-diff
