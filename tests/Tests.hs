@@ -2,10 +2,11 @@
 module Main (main) where
 
 import Data.Proxy                 (Proxy (..))
+import Data.Word                  (Word8)
 import GHC.Generics               (Generic)
 import Prelude ()
 import Prelude.Compat
-import Test.QuickCheck            (Property, counterexample)
+import Test.QuickCheck            (Property, counterexample, (===))
 import Test.Tasty                 (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.QuickCheck      (testProperty)
@@ -17,14 +18,26 @@ import qualified Text.Trifecta.Result         as T (ErrInfo (..), Result (..))
 
 import Data.TreeDiff
 import Data.TreeDiff.Golden
+import Data.TreeDiff.List
 import Data.TreeDiff.QuickCheck
+
+import qualified RefDiffBy
 
 main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
     , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
+    , testProperty "diffBy model" diffByModel
     , goldenTests
     ]
+
+-------------------------------------------------------------------------------
+-- diffBy
+-------------------------------------------------------------------------------
+
+diffByModel :: [Word8] -> [Word8] -> Property
+diffByModel xs ys =
+    diffBy (==) xs ys === RefDiffBy.diffBy (==) xs ys
 
 -------------------------------------------------------------------------------
 -- Roundtrip
