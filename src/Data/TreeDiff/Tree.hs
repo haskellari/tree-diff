@@ -72,7 +72,7 @@ import Data.TreeDiff.List
 -- >>> ppEditTree PP.char (treeDiff x w)
 -- (a b (c d +x e) f)
 --
-treeDiff :: Eq a => Tree a -> Tree a -> Edit (EditTree a)
+treeDiff :: (Show a, Eq a) => Tree a -> Tree a -> Edit (EditTree a)
 treeDiff ta@(Node a as) tb@(Node b bs)
     | a == b = Cpy $ EditNode a (map rec (diffBy (==) as bs))
     | otherwise = Swp (treeToEdit ta) (treeToEdit tb)

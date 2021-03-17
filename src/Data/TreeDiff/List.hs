@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | A list diff.
 module Data.TreeDiff.List (
@@ -6,8 +7,11 @@ module Data.TreeDiff.List (
 ) where
 
 import Control.DeepSeq (NFData (..))
+import Control.Monad.ST (ST, runST)
 
 import qualified Data.Primitive as P
+
+-- import Debug.Trace
 
 -- | List edit operations
 --
@@ -40,8 +44,12 @@ instance NFData a => NFData (Edit a) where
 -- /Note:/ currently this has O(n*m) memory requirements, for the sake
 -- of more obviously correct implementation.
 --
-diffBy :: forall a. (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
-diffBy eq xs' ys' = reverse (getCell (lcs xn yn))
+diffBy :: forall a. Show a => (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
+diffBy _  [] []   = []
+diffBy _  []  ys' = map Ins ys'
+diffBy _  xs' []  = map Del xs'
+diffBy eq xs' ys'
+    | otherwise = reverse (getCell lcs)
   where
     xn = length xs'
     yn = length ys'
@@ -49,36 +57,92 @@ diffBy eq xs' ys' = reverse (getCell (lcs xn yn))
     xs = P.arrayFromListN xn xs'
     ys = P.arrayFromListN yn ys'
 
-    memo :: P.Array (Cell [Edit a])
-    memo = P.arrayFromListN ((xn + 1) * (yn + 1))
-        [ impl xi yi
-        | xi <- [0 .. xn]
-        , yi <- [0 .. yn]
-        ]
+    lcs :: Cell [Edit a]
+    lcs = runST $ do
+        -- traceShowM ("sizes", xn, yn)
 
-    lcs :: Int -> Int -> Cell [Edit a]
-    lcs xi yi = P.indexArray memo (yi + xi * (yn + 1))
+        -- create two buffers.
+        buf1 <- P.newArray yn (Cell 0 [])
+        buf2 <- P.newArray yn (Cell 0 [])
 
-    impl :: Int -> Int -> Cell [Edit a]
-    impl 0 0 = Cell 0 []
-    impl 0 m = case lcs 0 (m - 1) of
-        Cell w edit -> Cell (w + 1) (Ins (P.indexArray ys (m - 1)) : edit)
-    impl n 0 = case lcs (n - 1) 0 of
-        Cell w edit -> Cell (w + 1) (Del (P.indexArray xs (n - 1)) : edit)
+        -- fill the first row
+        -- 0,0 case is filled already
+        yLoop (Cell 0 []) $ \m (Cell w edit) -> do
+            let cell = Cell (w + 1) (Ins (P.indexArray ys m) : edit)
+            P.writeArray buf1 m cell
+            P.writeArray buf2 m cell
+            -- traceShowM ("init", m, cell)
+            return cell
+ 
+        -- following rows
+        --
+        -- cellC cellT       
+        -- cellL cellX  
+        (buf1final, _, _) <- xLoop (buf1, buf2, Cell 0 []) $ \n (prev, curr, cellC) -> do
+            -- prevZ <- P.unsafeFreezeArray prev
+            -- currZ <- P.unsafeFreezeArray prev
+            -- traceShowM ("prev", n, prevZ)
+            -- traceShowM ("curr", n, currZ)
 
-    impl n m = bestOfThree
-        edit
-        (bimap (+1) (Ins y :) (lcs n (m - 1)))
-        (bimap (+1) (Del x :) (lcs (n - 1) m))
-      where
-        x = P.indexArray xs (n - 1)
-        y = P.indexArray ys (m - 1)
+            let cellL :: Cell [Edit a]
+                cellL = case cellC of (Cell w edit) -> Cell (w + 1) (Del (P.indexArray xs n) : edit)
 
-        edit
-            | eq x y    = bimap id   (Cpy x :)   (lcs (n - 1) (m - 1))
-            | otherwise = bimap (+1) (Swp x y :) (lcs (n - 1) (m - 1))
+            -- traceShowM ("cellC, cellL", n, cellC, cellL)
 
-data Cell a = Cell !Int !a
+            yLoop (cellC, cellL) $ \m (cellC', cellL') -> do
+                -- traceShowM ("inner loop", n, m)
+                cellT <- P.readArray prev m
+
+                -- traceShowM ("cellT", n, m, cellT)
+
+                let x, y :: a
+                    x = P.indexArray xs n
+                    y = P.indexArray ys m
+
+                -- from diagonal
+                let cellX1 :: Cell [Edit a]
+                    cellX1
+                        | eq x y    = bimap id   (Cpy x :)   cellC'
+                        | otherwise = bimap (+1) (Swp x y :) cellC'
+
+                -- from top
+                let cellX2 :: Cell [Edit a]
+                    cellX2 = bimap (+1) (Del x :) cellT
+
+                -- from left
+                let cellX3 :: Cell [Edit a]
+                    cellX3 = bimap (+1) (Ins y :) cellL'
+
+                -- the actual cell is best of three
+                let cellX :: Cell [Edit a]
+                    cellX = bestOfThree cellX1 cellX2 cellX3
+
+                -- traceShowM ("cellX", n, m, cellX)
+
+                -- memoize
+                P.writeArray curr m cellX
+
+                return (cellT, cellX)
+
+            return (curr, prev, cellL)
+                
+        P.readArray buf1final (yn - 1)
+
+    xLoop :: acc -> (Int -> acc -> ST s acc) -> ST s acc
+    xLoop !acc0 f = go acc0 0 where
+        go !acc !n | n < xn = do
+            acc' <- f n acc
+            go acc' (n + 1)
+        go !acc _ = return acc
+
+    yLoop :: acc -> (Int -> acc -> ST s acc) -> ST s ()
+    yLoop !acc0 f = go acc0 0 where
+        go !acc !m | m < yn = do
+            acc' <- f m acc
+            go acc' (m + 1)
+        go _ _ = return ()
+
+data Cell a = Cell !Int !a deriving Show
 
 getCell :: Cell a -> a
 getCell (Cell _ x) = x
