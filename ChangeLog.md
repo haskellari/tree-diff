@@ -1,3 +1,7 @@
+## 0.2.1
+
+- Support `aeson-2.0.0.0`
+
 ## 0.2
 
 - Change the pretty printing to use less horizontal space.
