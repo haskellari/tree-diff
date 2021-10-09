@@ -24,10 +24,10 @@ import Data.Foldable    (toList)
 import Data.List.Compat (uncons)
 import Data.Proxy       (Proxy (..))
 import GHC.Generics
-       ((:*:) (..), (:+:) (..), Constructor (..), Generic (..), K1 (..),
-       M1 (..), Selector (..), U1 (..), V1)
+       (Constructor (..), Generic (..), K1 (..), M1 (..), Selector (..),
+       U1 (..), V1, (:*:) (..), (:+:) (..))
 
-import qualified Data.Map as Map
+import qualified Data.Map           as Map
 import qualified Data.TreeDiff.OMap as OMap
 
 import Data.TreeDiff.Expr
@@ -94,6 +94,10 @@ import qualified Data.HashSet        as HS
 
 -- aeson
 import qualified Data.Aeson as Aeson
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key    as Key
+import qualified Data.Aeson.KeyMap as KM
+#endif
 
 -- strict
 import qualified Data.Strict as Strict
@@ -549,6 +553,14 @@ instance (ToExpr k) => ToExpr (HS.HashSet k) where
 -------------------------------------------------------------------------------
 
 instance ToExpr Aeson.Value
+
+#if MIN_VERSION_aeson(2,0,0)
+instance ToExpr Key.Key where
+    toExpr = stringToExpr "Key.concat" . unconcat T.uncons . Key.toText
+
+instance ToExpr a => ToExpr (KM.KeyMap a) where
+    toExpr x = App "KM.fromList" [ toExpr $ KM.toList x ]
+#endif
 
 -------------------------------------------------------------------------------
 -- strict
