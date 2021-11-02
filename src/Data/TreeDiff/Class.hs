@@ -379,8 +379,10 @@ instance ToExpr a => ToExpr (Mon.First a) where
 instance ToExpr a => ToExpr (Mon.Last a) where
 
 -- ...
+#if !MIN_VERSION_base(4,16,0)
 instance ToExpr a => ToExpr (Semi.Option a) where
     toExpr (Semi.Option x) = App "Option" [toExpr x]
+#endif
 instance ToExpr a => ToExpr (Semi.Min a) where
     toExpr (Semi.Min x) = App "Min" [toExpr x]
 instance ToExpr a => ToExpr (Semi.Max a) where
