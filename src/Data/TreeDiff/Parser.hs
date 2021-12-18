@@ -6,15 +6,18 @@ module Data.TreeDiff.Parser (
     exprParser
     ) where
 
-import Control.Applicative (optional, (<|>))
+import Control.Applicative (many, optional, (<|>))
 import Data.Char           (chr, isAlphaNum, isPunctuation, isSymbol)
 import Prelude ()
 import Prelude.Compat
 
-import Text.Parser.Char
-import Text.Parser.Combinators
+import Text.Parser.Char            (CharParsing (anyChar, char, satisfy))
+import Text.Parser.Combinators     (between, (<?>))
 import Text.Parser.Token
+       (TokenParsing (highlight, token), braces, brackets, commaSep,
+       hexadecimal, parens, symbolic)
 import Text.Parser.Token.Highlight
+       (Highlight (Identifier, StringLiteral, Symbol))
 
 import Data.TreeDiff.Expr
 

@@ -1,3 +1,7 @@
+## 0.2.1.1
+
+- Support `base-4.16` (GHC-9.2)
+
 ## 0.2.1
 
 - Support `aeson-2.0.0.0`
