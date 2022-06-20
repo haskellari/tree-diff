@@ -1,7 +1,7 @@
 cabal-version:      2.2
 name:               tree-diff
 version:            0.2.1.1
-x-revision:         1
+x-revision:         2
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
@@ -111,7 +111,7 @@ library
     , these                 ^>=1.1.1.1
     , unordered-containers  ^>=0.2.8.0
     , uuid-types            ^>=1.0.3
-    , vector                ^>=0.12
+    , vector                ^>=0.12 || ^>=0.13
 
   if impl(ghc <7.5)
     build-depends: ghc-prim
