@@ -1,3 +1,7 @@
+## 0.2.2
+
+- Add instances for base and primitive's `ByteArray`s.
+
 ## 0.2.1.1
 
 - Support `base-4.16` (GHC-9.2)
