@@ -106,7 +106,11 @@ import qualified Data.Strict as Strict
 import Data.These (These (..))
 
 -- primitive
--- import qualified Data.Primitive as Prim
+import qualified Data.Primitive as Prim
+
+#if MIN_VERSION_base(4,17,0)
+import Data.Array.Byte (ByteArray (..))
+#endif
 
 -- $setup
 -- >>> :set -XDeriveGeneric
@@ -593,4 +597,14 @@ instance (ToExpr a, ToExpr b) => ToExpr (These a b) where
 -- primitive
 -------------------------------------------------------------------------------
 
--- TODO: add instances
+-- | @since 0.2.2
+instance ToExpr Prim.ByteArray where
+    toExpr ba = App "Prim.byteArrayFromList" [toExpr (Prim.foldrByteArray (:) [] ba :: [Word8])]
+
+#if MIN_VERSION_base(4,17,0)
+-- | @since 0.2.2
+instance ToExpr ByteArray where
+    toExpr (ByteArray ba) = App "byteArrayFromList" [toExpr (Prim.foldrByteArray (:) [] (Prim.ByteArray ba) :: [Word8])]
+#endif
+
+-- TODO: add more instances
