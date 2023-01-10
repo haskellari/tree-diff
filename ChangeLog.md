@@ -8,6 +8,7 @@
   https://github.com/haskellari/tree-diff/issues/67
 
 - Add `Ord Expr` and `Ord OMap` instances
+- Depend on `data-array-byte` to provide more `ByteArray` instances
 
 ## 0.2.2
 
