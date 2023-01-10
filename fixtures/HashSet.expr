@@ -1,0 +1,14 @@
+HS.fromList
+  [
+    "az",
+    "dz",
+    "ax",
+    "bz",
+    "cx",
+    "cz",
+    "dy",
+    "bx",
+    "cy",
+    "by",
+    "dx",
+    "ay"]

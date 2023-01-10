@@ -11,6 +11,7 @@ import Test.Tasty                 (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.QuickCheck      (testProperty)
 
+import qualified Data.HashSet                 as HS
 import qualified Text.Parsec                  as P
 import qualified Text.PrettyPrint.ANSI.Leijen as WL
 import qualified Text.Trifecta                as T (eof, parseString)
@@ -163,5 +164,9 @@ goldenTests = testGroup "Golden"
         return $ MyInt3 42
     , ediffGolden goldenTest "Positional" "fixtures/Positional.expr" $
         return $ Positional 12 True 'z'
+
+    -- issue #67
+    , ediffGolden goldenTest "HashSet" "fixtures/HashSet.expr" $
+        return $ HS.fromList [ [x,y] | x <- "abcd", y <- "xyz" ]
     ]
 
