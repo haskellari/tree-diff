@@ -1,14 +1,14 @@
 HS.fromList
   [
-    "az",
-    "dz",
     "ax",
+    "ay",
+    "az",
+    "bx",
+    "by",
     "bz",
     "cx",
-    "cz",
-    "dy",
-    "bx",
     "cy",
-    "by",
+    "cz",
     "dx",
-    "ay"]
+    "dy",
+    "dz"]

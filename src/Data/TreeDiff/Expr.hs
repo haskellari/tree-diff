@@ -35,7 +35,7 @@ data Expr
     = App ConstructorName [Expr]                 -- ^ application
     | Rec ConstructorName (OMap FieldName Expr)  -- ^ record constructor
     | Lst [Expr]                                 -- ^ list constructor
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 instance NFData Expr where
     rnf (App n es) = rnf n `seq` rnf es

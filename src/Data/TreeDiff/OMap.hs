@@ -61,12 +61,10 @@ instance (Show k, Show v) => Show (OMap k v) where
 -- False
 --
 instance (Eq k, Eq v) => Eq (OMap k v) where
-    xs == ys = go (toAscList xs) (toAscList ys) where
-        go [] [] = True
-        go _  [] = False
-        go [] _  = False
-        go ((k1, v1) : kvs1) ((k2, v2) : kvs2) =
-            k1 == k2 && v1 == v2 && go kvs1 kvs2
+    xs == ys = toAscList xs == toAscList ys
+
+instance (Ord k, Ord v) => Ord (OMap k v) where
+    compare xs ys = compare (toAscList xs) (toAscList ys)
 
 -------------------------------------------------------------------------------
 -- deepseq
