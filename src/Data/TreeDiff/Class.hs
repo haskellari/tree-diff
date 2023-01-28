@@ -21,6 +21,7 @@ module Data.TreeDiff.Class (
     ) where
 
 import Data.Foldable    (toList)
+import Data.List        (sort)
 import Data.List.Compat (uncons)
 import Data.Proxy       (Proxy (..))
 import GHC.Generics
@@ -108,7 +109,7 @@ import Data.These (These (..))
 -- primitive
 import qualified Data.Primitive as Prim
 
-#if MIN_VERSION_base(4,17,0)
+#if MIN_VERSION_base(4,9,0)
 import Data.Array.Byte (ByteArray (..))
 #endif
 
@@ -550,9 +551,9 @@ instance ToExpr a => ToExpr (Hashed a) where
 -------------------------------------------------------------------------------
 
 instance (ToExpr k, ToExpr v) => ToExpr (HM.HashMap k v) where
-    toExpr x = App "HM.fromList" [ toExpr $ HM.toList x ]
+    toExpr x = App "HM.fromList" [ Lst $ sort $ map toExpr $ HM.toList x ]
 instance (ToExpr k) => ToExpr (HS.HashSet k) where
-    toExpr x = App "HS.fromList" [ toExpr $ HS.toList x ]
+    toExpr x = App "HS.fromList" [ Lst $ sort $ map toExpr $ HS.toList x ]
 
 -------------------------------------------------------------------------------
 -- aeson
@@ -601,7 +602,7 @@ instance (ToExpr a, ToExpr b) => ToExpr (These a b) where
 instance ToExpr Prim.ByteArray where
     toExpr ba = App "Prim.byteArrayFromList" [toExpr (Prim.foldrByteArray (:) [] ba :: [Word8])]
 
-#if MIN_VERSION_base(4,17,0)
+#if MIN_VERSION_base(4,9,0)
 -- | @since 0.2.2
 instance ToExpr ByteArray where
     toExpr (ByteArray ba) = App "byteArrayFromList" [toExpr (Prim.foldrByteArray (:) [] (Prim.ByteArray ba) :: [Word8])]

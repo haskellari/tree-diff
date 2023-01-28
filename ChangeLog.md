@@ -1,3 +1,15 @@
+## 0.3
+
+- Breaking change:
+  Make HashSet and HashMap ToExpr instances sort the resulting
+  lists of expressions.
+  This makes the results deterministic.
+  ... but your golden files will need adjustment.
+  https://github.com/haskellari/tree-diff/issues/67
+
+- Add `Ord Expr` and `Ord OMap` instances
+- Depend on `data-array-byte` to provide more `ByteArray` instances
+
 ## 0.2.2
 
 - Add instances for base and primitive's `ByteArray`s.
