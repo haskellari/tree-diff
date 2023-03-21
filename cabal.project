@@ -1,5 +1,7 @@
 packages: .
 
+tests: True
+
 package tree-diff
   ghc-options: -Wall
 

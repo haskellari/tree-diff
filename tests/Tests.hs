@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP           #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Main (main) where
 
@@ -11,7 +12,12 @@ import Test.Tasty                 (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.QuickCheck      (testProperty)
 
+#if MIN_VERSION_base(4,9,0)
+import Data.Array.Byte (ByteArray (..))
+#endif
+
 import qualified Data.HashSet                 as HS
+import qualified Data.Primitive               as Prim
 import qualified Text.Parsec                  as P
 import qualified Text.PrettyPrint.ANSI.Leijen as WL
 import qualified Text.Trifecta                as T (eof, parseString)
@@ -151,6 +157,16 @@ instance ToExpr MyInt2
 instance ToExpr MyInt3
 instance ToExpr Positional
 instance ToExpr Empty
+
+-- test that we have both instances.
+data ByteArrays = ByteArrays
+    Prim.ByteArray
+#if MIN_VERSION_base(4,9,0)
+    ByteArray
+#endif
+  deriving Generic
+
+instance ToExpr ByteArrays
 
 goldenTests :: TestTree
 goldenTests = testGroup "Golden"
