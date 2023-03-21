@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.15.20221225
+# version: 0.15.20230321
 #
-# REGENDATA ("0.15.20221225",["github","cabal.project"])
+# REGENDATA ("0.15.20230321",["github","cabal.project"])
 #
 name: Haskell-CI
 on:
@@ -37,14 +37,19 @@ jobs:
             compilerVersion: "8.4"
             setup-method: hvr-ppa
             allow-failure: false
-          - compiler: ghc-9.4.1
+          - compiler: ghc-9.6.1
             compilerKind: ghc
-            compilerVersion: 9.4.1
+            compilerVersion: 9.6.1
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-9.2.4
+          - compiler: ghc-9.4.4
             compilerKind: ghc
-            compilerVersion: 9.2.4
+            compilerVersion: 9.4.4
+            setup-method: ghcup
+            allow-failure: false
+          - compiler: ghc-9.2.7
+            compilerKind: ghc
+            compilerVersion: 9.2.7
             setup-method: ghcup
             allow-failure: false
           - compiler: ghc-9.0.2
@@ -52,10 +57,10 @@ jobs:
             compilerVersion: 9.0.2
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-8.10.4
+          - compiler: ghc-8.10.7
             compilerKind: ghc
-            compilerVersion: 8.10.4
-            setup-method: hvr-ppa
+            compilerVersion: 8.10.7
+            setup-method: ghcup
             allow-failure: false
           - compiler: ghc-8.8.4
             compilerKind: ghc
@@ -123,10 +128,10 @@ jobs:
           apt-get install -y --no-install-recommends gnupg ca-certificates dirmngr curl git software-properties-common libtinfo5
           if [ "${{ matrix.setup-method }}" = ghcup ]; then
             mkdir -p "$HOME/.ghcup/bin"
-            curl -sL https://downloads.haskell.org/ghcup/0.1.18.0/x86_64-linux-ghcup-0.1.18.0 > "$HOME/.ghcup/bin/ghcup"
+            curl -sL https://downloads.haskell.org/ghcup/0.1.19.2/x86_64-linux-ghcup-0.1.19.2 > "$HOME/.ghcup/bin/ghcup"
             chmod a+x "$HOME/.ghcup/bin/ghcup"
             "$HOME/.ghcup/bin/ghcup" install ghc "$HCVER" || (cat "$HOME"/.ghcup/logs/*.* && false)
-            "$HOME/.ghcup/bin/ghcup" install cabal 3.6.2.0 || (cat "$HOME"/.ghcup/logs/*.* && false)
+            "$HOME/.ghcup/bin/ghcup" install cabal 3.10.1.0 || (cat "$HOME"/.ghcup/logs/*.* && false)
           else
             apt-add-repository -y 'ppa:hvr/ghc'
             if [ $((GHCJSARITH)) -ne 0 ] ; then apt-add-repository -y 'ppa:hvr/ghcjs' ; fi
@@ -135,9 +140,9 @@ jobs:
             apt-get update
             if [ $((GHCJSARITH)) -ne 0 ] ; then apt-get install -y "$HCNAME" ghc-8.4.4 nodejs ; else apt-get install -y "$HCNAME" ; fi
             mkdir -p "$HOME/.ghcup/bin"
-            curl -sL https://downloads.haskell.org/ghcup/0.1.18.0/x86_64-linux-ghcup-0.1.18.0 > "$HOME/.ghcup/bin/ghcup"
+            curl -sL https://downloads.haskell.org/ghcup/0.1.19.2/x86_64-linux-ghcup-0.1.19.2 > "$HOME/.ghcup/bin/ghcup"
             chmod a+x "$HOME/.ghcup/bin/ghcup"
-            "$HOME/.ghcup/bin/ghcup" install cabal 3.6.2.0 || (cat "$HOME"/.ghcup/logs/*.* && false)
+            "$HOME/.ghcup/bin/ghcup" install cabal 3.10.1.0 || (cat "$HOME"/.ghcup/logs/*.* && false)
           fi
         env:
           HCKIND: ${{ matrix.compilerKind }}
@@ -156,13 +161,13 @@ jobs:
             echo "HC=$HC" >> "$GITHUB_ENV"
             echo "HCPKG=$HOME/.ghcup/bin/$HCKIND-pkg-$HCVER" >> "$GITHUB_ENV"
             echo "HADDOCK=$HOME/.ghcup/bin/haddock-$HCVER" >> "$GITHUB_ENV"
-            echo "CABAL=$HOME/.ghcup/bin/cabal-3.6.2.0 -vnormal+nowrap" >> "$GITHUB_ENV"
+            echo "CABAL=$HOME/.ghcup/bin/cabal-3.10.1.0 -vnormal+nowrap" >> "$GITHUB_ENV"
           else
             HC=$HCDIR/bin/$HCKIND
             echo "HC=$HC" >> "$GITHUB_ENV"
             echo "HCPKG=$HCDIR/bin/$HCKIND-pkg" >> "$GITHUB_ENV"
             echo "HADDOCK=$HCDIR/bin/haddock" >> "$GITHUB_ENV"
-            echo "CABAL=$HOME/.ghcup/bin/cabal-3.6.2.0 -vnormal+nowrap" >> "$GITHUB_ENV"
+            echo "CABAL=$HOME/.ghcup/bin/cabal-3.10.1.0 -vnormal+nowrap" >> "$GITHUB_ENV"
           fi
 
           HCNUMVER=$(${HC} --numeric-version|perl -ne '/^(\d+)\.(\d+)\.(\d+)(\.(\d+))?$/; print(10000 * $1 + 100 * $2 + ($3 == 0 ? $5 != 1 : $3))')
@@ -231,7 +236,7 @@ jobs:
           chmod a+x $HOME/.cabal/bin/cabal-docspec
           cabal-docspec --version
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: source
       - name: initial cabal.project for sdist
@@ -266,8 +271,8 @@ jobs:
         run: |
           $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH --dry-run all
           cabal-plan
-      - name: cache
-        uses: actions/cache@v2
+      - name: restore cache
+        uses: actions/cache/restore@v3
         with:
           key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
           path: ~/.cabal/store
@@ -295,7 +300,7 @@ jobs:
           ${CABAL} -vnormal check
       - name: haddock
         run: |
-          if [ $((! GHCJSARITH && HCNUMVER >= 70800)) -ne 0 ] ; then $CABAL v2-haddock --haddock-all $ARG_COMPILER --with-haddock $HADDOCK $ARG_TESTS $ARG_BENCH all ; fi
+          if [ $((! GHCJSARITH && HCNUMVER >= 70800)) -ne 0 ] ; then $CABAL v2-haddock --disable-documentation --haddock-all $ARG_COMPILER --with-haddock $HADDOCK $ARG_TESTS $ARG_BENCH all ; fi
       - name: unconstrained build
         run: |
           rm -f cabal.project.local
@@ -305,6 +310,12 @@ jobs:
           rm -f cabal.project.local
       - name: constraint set random-hashable
         run: |
-          if [ $((! GHCJSARITH && HCNUMVER >= 90400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='hashable >=1.3.2.0' --constraint='hashable +random-initial-seed' --dependencies-only -j2 all ; fi
-          if [ $((! GHCJSARITH && HCNUMVER >= 90400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='hashable >=1.3.2.0' --constraint='hashable +random-initial-seed' all ; fi
-          if [ $((! GHCJSARITH && HCNUMVER >= 90400)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='hashable >=1.3.2.0' --constraint='hashable +random-initial-seed' all ; fi
+          if [ $((! GHCJSARITH && HCNUMVER >= 90400 && HCNUMVER < 90600)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='hashable >=1.3.2.0' --constraint='hashable +random-initial-seed' --dependencies-only -j2 all ; fi
+          if [ $((! GHCJSARITH && HCNUMVER >= 90400 && HCNUMVER < 90600)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='hashable >=1.3.2.0' --constraint='hashable +random-initial-seed' all ; fi
+          if [ $((! GHCJSARITH && HCNUMVER >= 90400 && HCNUMVER < 90600)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='hashable >=1.3.2.0' --constraint='hashable +random-initial-seed' all ; fi
+      - name: save cache
+        uses: actions/cache/save@v3
+        if: always()
+        with:
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
+          path: ~/.cabal/store
