@@ -16,12 +16,12 @@ import Test.Tasty.QuickCheck      (testProperty)
 import Data.Array.Byte (ByteArray (..))
 #endif
 
-import qualified Data.HashSet                 as HS
-import qualified Data.Primitive               as Prim
-import qualified Text.Parsec                  as P
-import qualified Text.PrettyPrint.ANSI.Leijen as WL
-import qualified Text.Trifecta                as T (eof, parseString)
-import qualified Text.Trifecta.Result         as T (ErrInfo (..), Result (..))
+import qualified Data.HashSet         as HS
+import qualified Data.Primitive       as Prim
+import qualified Prettyprinter        as PP
+import qualified Text.Parsec          as P
+import qualified Text.Trifecta        as T (eof, parseString)
+import qualified Text.Trifecta.Result as T (ErrInfo (..), Result (..))
 
 import Data.TreeDiff
 import Data.TreeDiff.Golden
@@ -33,7 +33,7 @@ import qualified RefDiffBy
 main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ testProperty "trifecta-pretty roundtrip" roundtripTrifectaPretty
-    , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsiWl
+    , testProperty "parsec-ansi-wl-pprint roundtrip" roundtripParsecAnsi
     , testProperty "diffBy example1" $ diffByModel [7,1,6,0,0] [0,0,6,7,1,0,0]
     , testProperty "diffBy model" diffByModel
     , goldenTests
@@ -76,10 +76,10 @@ roundtripTrifectaPretty e = counterexample info $ ediffEq (Just e) res'
         T.Success e' -> Just e'
         T.Failure _  -> Nothing
 
-roundtripParsecAnsiWl :: Expr -> Property
-roundtripParsecAnsiWl e = counterexample info $ ediffEq (Just e) res'
+roundtripParsecAnsi :: Expr -> Property
+roundtripParsecAnsi e = counterexample info $ ediffEq (Just e) res'
   where
-    doc = show (WL.plain (ansiWlExpr e))
+    doc = show (PP.unAnnotate (ansiExpr e))
     res = P.parse (exprParser <* P.eof) "<memory>" doc
 
     info = case res of

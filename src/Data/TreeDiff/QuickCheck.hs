@@ -10,5 +10,5 @@ import Test.QuickCheck     (Property, counterexample)
 -- | A variant of '===', which outputs a diff when values are inequal.
 ediffEq :: (Eq a, ToExpr a) => a -> a -> Property
 ediffEq x y = counterexample
-    (setSGRCode [Reset] ++ show (ansiWlEditExpr $ ediff x y))
+    (setSGRCode [Reset] ++ show (ansiEditExpr $ ediff x y))
     (x == y)

@@ -15,11 +15,11 @@ module Data.TreeDiff.OMap (
     elems,
 ) where
 
-import Data.List      (sortBy)
-import Data.Ord       (comparing)
-import Data.Semialign (Semialign (..))
-import Data.These     (These (..))
-import Control.DeepSeq  (NFData (..))
+import Control.DeepSeq (NFData (..))
+import Data.List       (sortBy)
+import Data.Ord        (comparing)
+import Data.Semialign  (Semialign (..))
+import Data.These      (These (..))
 
 #if MIN_VERSION_containers(0,5,0)
 import qualified Data.Map.Strict as Map
