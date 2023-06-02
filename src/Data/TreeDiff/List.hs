@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | A list diff.
 module Data.TreeDiff.List (
@@ -6,7 +6,7 @@ module Data.TreeDiff.List (
     Edit (..),
 ) where
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq  (NFData (..))
 import Control.Monad.ST (ST, runST)
 
 import qualified Data.Primitive as P

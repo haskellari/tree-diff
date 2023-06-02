@@ -10,10 +10,12 @@ import System.Console.ANSI (SGR (Reset), setSGRCode)
 import Text.Parsec         (eof, parse)
 import Text.Parsec.Text ()
 
-import qualified Data.ByteString              as BS
-import qualified Data.Text                    as T
-import qualified Data.Text.Encoding           as TE
-import qualified Text.PrettyPrint.ANSI.Leijen as WL
+import qualified Data.ByteString               as BS
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as TE
+import qualified Data.Text.Lazy                as TL
+import qualified Prettyprinter                 as PP
+import qualified Prettyprinter.Render.Terminal as PP
 
 -- | Make a golden tests.
 --
@@ -54,8 +56,13 @@ ediffGolden impl testName fp x = impl testName expect actual cmp wrt
     cmp a b
         | a == b    = return Nothing
         | otherwise = return $ Just $
-            setSGRCode [Reset] ++ showWL (ansiWlEditExprCompact $ ediff a b)
-    wrt expr = BS.writeFile fp $ TE.encodeUtf8 $ T.pack $ showWL (WL.plain (ansiWlExpr expr)) ++ "\n"
+            setSGRCode [Reset] ++ showPP (ansiEditExprCompact $ ediff a b)
+    wrt expr = BS.writeFile fp $ TE.encodeUtf8 $ T.pack $ showPP (PP.unAnnotate (ansiExpr expr)) ++ "\n"
 
-showWL :: WL.Doc -> String
-showWL doc = WL.displayS (WL.renderSmart 0.4 80 doc) ""
+showPP :: PP.Doc PP.AnsiStyle -> String
+showPP doc = TL.unpack
+           $ PP.renderLazy
+           $ PP.layoutSmart
+               PP.LayoutOptions
+                 { PP.layoutPageWidth = PP.AvailablePerLine 80 (realToFrac (0.4 :: Float)) }
+                 doc
