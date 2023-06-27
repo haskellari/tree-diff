@@ -1,7 +1,7 @@
 cabal-version:      2.2
 name:               tree-diff
 version:            0.3.0.1
-x-revision:         2
+x-revision:         3
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
@@ -56,9 +56,9 @@ tested-with:
      || ==8.8.4
      || ==8.10.7
      || ==9.0.2
-     || ==9.2.7
+     || ==9.2.8
      || ==9.4.5
-     || ==9.6.1
+     || ==9.6.2
   , GHCJS ==8.4
 
 extra-source-files:
@@ -97,7 +97,7 @@ library
     , time        >=1.4       && <1.5        || >=1.5.0.1   && <1.6 || >=1.6.0.1 && <1.7 || >=1.8.0.2 && <1.9 || >=1.9.3 && <1.13
 
   build-depends:
-    , aeson                 ^>=1.4.6.0    || ^>=1.5.6.0  || ^>=2.0.0.0 || ^>=2.1.0.0
+    , aeson                 ^>=1.4.6.0    || ^>=1.5.6.0  || ^>=2.0.0.0 || ^>=2.1.0.0 || ^>=2.2.0.0
     , ansi-terminal         >=0.10        && <0.12       || ^>=1.0
     , ansi-wl-pprint        ^>=0.6.8.2    || ^>=1.0.2
     , base-compat           >=0           && <0.13       || ^>=0.13
