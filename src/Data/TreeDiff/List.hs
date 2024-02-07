@@ -17,17 +17,17 @@ import qualified Data.Primitive as P
 --
 -- The 'Swp' constructor is redundant, but it let us spot
 -- a recursion point when performing tree diffs.
-data Edit a
-    = Ins a    -- ^ insert
+data Edit a b
+    = Ins b    -- ^ insert
     | Del a    -- ^ delete
-    | Cpy a    -- ^ copy unchanged
-    | Swp a a  -- ^ swap, i.e. delete + insert
+    | Cpy a b  -- ^ copy unchanged
+    | Swp a b  -- ^ swap, i.e. delete + insert
   deriving (Eq, Show)
 
-instance NFData a => NFData (Edit a) where
+instance (NFData a, NFData b) => NFData (Edit a b) where
     rnf (Ins x)   = rnf x
     rnf (Del x)   = rnf x
-    rnf (Cpy x)   = rnf x
+    rnf (Cpy x y) = rnf x `seq` rnf y
     rnf (Swp x y) = rnf x `seq` rnf y
 
 -- | List difference.
@@ -41,7 +41,7 @@ instance NFData a => NFData (Edit a) where
 -- prop> \xs ys -> length (diffBy (==) xs ys) >= max (length xs) (length (ys :: String))
 -- prop> \xs ys -> length (diffBy (==) xs ys) <= length xs + length (ys :: String)
 --
-diffBy :: forall a. Show a => (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
+diffBy :: forall a b. (Show a, Show b) => (a -> b -> Bool) -> [a] -> [b] -> [Edit a b]
 diffBy _  [] []   = []
 diffBy _  []  ys' = map Ins ys'
 diffBy _  xs' []  = map Del xs'
@@ -54,7 +54,7 @@ diffBy eq xs' ys'
     xs = P.arrayFromListN xn xs'
     ys = P.arrayFromListN yn ys'
 
-    lcs :: Cell [Edit a]
+    lcs :: Cell [Edit a b]
     lcs = runST $ do
         -- traceShowM ("sizes", xn, yn)
 
@@ -81,7 +81,7 @@ diffBy eq xs' ys'
             -- traceShowM ("prev", n, prevZ)
             -- traceShowM ("curr", n, currZ)
 
-            let cellL :: Cell [Edit a]
+            let cellL :: Cell [Edit a b]
                 cellL = case cellC of (Cell w edit) -> Cell (w + 1) (Del (P.indexArray xs n) : edit)
 
             -- traceShowM ("cellC, cellL", n, cellC, cellL)
@@ -92,26 +92,28 @@ diffBy eq xs' ys'
 
                 -- traceShowM ("cellT", n, m, cellT)
 
-                let x, y :: a
+                let x :: a
                     x = P.indexArray xs n
+
+                    y :: b
                     y = P.indexArray ys m
 
                 -- from diagonal
-                let cellX1 :: Cell [Edit a]
+                let cellX1 :: Cell [Edit a b]
                     cellX1
-                        | eq x y    = bimap id   (Cpy x :)   cellC'
+                        | eq x y    = bimap id   (Cpy x y :) cellC'
                         | otherwise = bimap (+1) (Swp x y :) cellC'
 
                 -- from left
-                let cellX2 :: Cell [Edit a]
+                let cellX2 :: Cell [Edit a b]
                     cellX2 = bimap (+1) (Ins y :) cellL'
 
                 -- from top
-                let cellX3 :: Cell [Edit a]
+                let cellX3 :: Cell [Edit a b]
                     cellX3 = bimap (+1) (Del x :) cellT
 
                 -- the actual cell is best of three
-                let cellX :: Cell [Edit a]
+                let cellX :: Cell [Edit a b]
                     cellX = bestOfThree cellX1 cellX2 cellX3
 
                 -- traceShowM ("cellX", n, m, cellX)
