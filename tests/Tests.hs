@@ -1,20 +1,14 @@
-{-# LANGUAGE CPP           #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Main (main) where
 
+import Data.Array.Byte            (ByteArray (..))
 import Data.Proxy                 (Proxy (..))
 import Data.Word                  (Word8)
 import GHC.Generics               (Generic)
-import Prelude ()
-import Prelude.Compat
 import Test.QuickCheck            (Property, counterexample, (===))
 import Test.Tasty                 (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.QuickCheck      (testProperty)
-
-#if MIN_VERSION_base(4,9,0)
-import Data.Array.Byte (ByteArray (..))
-#endif
 
 import qualified Data.HashSet                 as HS
 import qualified Data.Primitive               as Prim
@@ -161,9 +155,7 @@ instance ToExpr Empty
 -- test that we have both instances.
 data ByteArrays = ByteArrays
     Prim.ByteArray
-#if MIN_VERSION_base(4,9,0)
     ByteArray
-#endif
   deriving Generic
 
 instance ToExpr ByteArrays

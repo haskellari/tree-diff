@@ -28,7 +28,7 @@ import Data.Char          (isAlphaNum, isPunctuation, isSymbol, ord)
 import Data.Either        (partitionEithers)
 import Data.TreeDiff.Expr
 import Numeric            (showHex)
-import Text.Read.Compat   (readMaybe)
+import Text.Read          (readMaybe)
 
 import qualified Data.TreeDiff.OMap           as OMap
 import qualified Text.PrettyPrint             as HJ
