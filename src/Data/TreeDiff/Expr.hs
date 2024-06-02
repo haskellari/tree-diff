@@ -9,9 +9,6 @@ module Data.TreeDiff.Expr (
     exprDiff,
     ) where
 
-import Prelude ()
-import Prelude.Compat
-
 import Control.DeepSeq (NFData (..))
 import Data.Semialign  (alignWith)
 import Data.These      (These (..))

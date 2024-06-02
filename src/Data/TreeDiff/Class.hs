@@ -1,14 +1,12 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE DefaultSignatures   #-}
+{-# LANGUAGE EmptyCase           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 708
-{-# LANGUAGE EmptyCase           #-}
-#endif
 -- | A 'ToExpr' class.
 module Data.TreeDiff.Class (
     ediff,
@@ -20,10 +18,9 @@ module Data.TreeDiff.Class (
     GToExpr,
     ) where
 
-import Data.Foldable    (toList)
-import Data.List        (sort)
-import Data.List.Compat (uncons)
-import Data.Proxy       (Proxy (..))
+import Data.Foldable (toList)
+import Data.List     (sort, uncons)
+import Data.Proxy    (Proxy (..))
 import GHC.Generics
        (Constructor (..), Generic (..), K1 (..), M1 (..), Selector (..),
        U1 (..), V1, (:*:) (..), (:+:) (..))
@@ -42,10 +39,6 @@ import Data.List.NonEmpty    (NonEmpty (..))
 import Data.Void             (Void)
 import Data.Word
 import Numeric.Natural       (Natural)
-
-#ifdef MIN_VERSION_generic_deriving
-import Generics.Deriving.Instances ()
-#endif
 
 import qualified Data.Monoid    as Mon
 import qualified Data.Ratio     as Ratio
@@ -94,11 +87,9 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.HashSet        as HS
 
 -- aeson
-import qualified Data.Aeson as Aeson
-#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson        as Aeson
 import qualified Data.Aeson.Key    as Key
 import qualified Data.Aeson.KeyMap as KM
-#endif
 
 -- strict
 import qualified Data.Strict as Strict
@@ -107,11 +98,7 @@ import qualified Data.Strict as Strict
 import Data.These (These (..))
 
 -- primitive
-import qualified Data.Primitive as Prim
-
-#if MIN_VERSION_base(4,9,0)
-import Data.Array.Byte (ByteArray (..))
-#endif
+import qualified Data.Primitive  as Prim
 
 -- $setup
 -- >>> :set -XDeriveGeneric
@@ -202,11 +189,7 @@ instance (GSumToExpr f, GSumToExpr g) => GSumToExpr (f :+: g) where
     gsumToExpr (R1 x) = gsumToExpr x
 
 instance GSumToExpr V1 where
-#if __GLASGOW_HASKELL__ >= 708
     gsumToExpr x = case x of {}
-#else
-    gsumToExpr x = x `seq` error "panic: V1 value"
-#endif
 
 instance (Constructor c, GProductToExpr f) => GSumToExpr (M1 i c f) where
     gsumToExpr z@(M1 x) = case gproductToExpr x of
@@ -561,13 +544,11 @@ instance (ToExpr k) => ToExpr (HS.HashSet k) where
 
 instance ToExpr Aeson.Value
 
-#if MIN_VERSION_aeson(2,0,0)
 instance ToExpr Key.Key where
     toExpr = stringToExpr "Key.concat" . unconcat T.uncons . Key.toText
 
 instance ToExpr a => ToExpr (KM.KeyMap a) where
     toExpr x = App "KM.fromList" [ toExpr $ KM.toList x ]
-#endif
 
 -------------------------------------------------------------------------------
 -- strict
@@ -601,11 +582,3 @@ instance (ToExpr a, ToExpr b) => ToExpr (These a b) where
 -- | @since 0.2.2
 instance ToExpr Prim.ByteArray where
     toExpr ba = App "Prim.byteArrayFromList" [toExpr (Prim.foldrByteArray (:) [] ba :: [Word8])]
-
-#if !MIN_VERSION_primitive(0,8,0) && MIN_VERSION_base(4,9,0)
--- | @since 0.2.2
-instance ToExpr ByteArray where
-    toExpr (ByteArray ba) = App "byteArrayFromList" [toExpr (Prim.foldrByteArray (:) [] (Prim.ByteArray ba) :: [Word8])]
-#endif
-
--- TODO: add more instances

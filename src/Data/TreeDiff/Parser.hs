@@ -8,8 +8,6 @@ module Data.TreeDiff.Parser (
 
 import Control.Applicative (many, optional, (<|>))
 import Data.Char           (chr, isAlphaNum, isPunctuation, isSymbol)
-import Prelude ()
-import Prelude.Compat
 
 import Text.Parser.Char            (CharParsing (anyChar, char, satisfy))
 import Text.Parser.Combinators     (between, (<?>))

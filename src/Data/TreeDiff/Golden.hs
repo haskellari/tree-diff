@@ -4,8 +4,6 @@ module Data.TreeDiff.Golden (
 ) where
 
 import Data.TreeDiff
-import Prelude ()
-import Prelude.Compat
 import System.Console.ANSI (SGR (Reset), setSGRCode)
 import Text.Parsec         (eof, parse)
 import Text.Parsec.Text ()
