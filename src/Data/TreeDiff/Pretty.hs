@@ -30,9 +30,12 @@ import Data.TreeDiff.Expr
 import Numeric            (showHex)
 import Text.Read          (readMaybe)
 
-import qualified Data.TreeDiff.OMap           as OMap
-import qualified Text.PrettyPrint             as HJ
-import qualified Text.PrettyPrint.ANSI.Leijen as WL
+import qualified Data.TreeDiff.OMap            as OMap
+import qualified Prettyprinter                 as PP
+import qualified Prettyprinter.Render.Terminal as PP
+
+type PlainDoc = PP.Doc ()
+type AnsiDoc = PP.Doc PP.AnsiStyle
 
 -- $setup
 -- >>> import qualified Data.TreeDiff.OMap as OMap
@@ -173,42 +176,42 @@ ppEditExpr' compact p = go
 -------------------------------------------------------------------------------
 
 -- | 'Pretty' via @pretty@ library.
-prettyPretty :: Pretty HJ.Doc
+prettyPretty :: Pretty PlainDoc
 prettyPretty = Pretty
-    { ppCon    = HJ.text
-    , ppRec    = \c xs -> prettyGroup (c HJ.<+> HJ.char '{') (HJ.char '}')
-               $ map (\(fn, d) -> HJ.sep [HJ.text fn HJ.<+> HJ.equals, d]) xs
-    , ppLst    = prettyGroup (HJ.char '[') (HJ.char ']')
+    { ppCon    = PP.pretty
+    , ppRec    = \c xs -> prettyGroup (c PP.<+> PP.pretty '{') (PP.pretty '}')
+               $ map (\(fn, d) -> PP.sep [PP.pretty fn PP.<+> PP.equals, d]) xs
+    , ppLst    = prettyGroup (PP.pretty '[') (PP.pretty ']')
     , ppCpy    = id
-    , ppIns    = \d -> HJ.char '+' HJ.<> d
-    , ppDel    = \d -> HJ.char '-' HJ.<> d
-    , ppEdits  = HJ.sep
-    , ppEllip  = HJ.text "..."
-    , ppApp    = \f xs -> HJ.sep [ f, HJ.nest 2 $ HJ.sep xs ]
-    , ppParens = HJ.parens
+    , ppIns    = \d -> PP.pretty '+' PP.<> d
+    , ppDel    = \d -> PP.pretty '-' PP.<> d
+    , ppEdits  = PP.sep
+    , ppEllip  = PP.pretty "..."
+    , ppApp    = \f xs -> PP.sep [ f, PP.nest 2 $ PP.sep xs ]
+    , ppParens = PP.parens
     }
 
-prettyGroup :: HJ.Doc -> HJ.Doc -> [HJ.Doc] -> HJ.Doc
-prettyGroup l r xs = HJ.cat [l, HJ.sep (map (HJ.nest 2) (prettyPunct (HJ.char ',') r xs))]
+prettyGroup :: PlainDoc -> PlainDoc -> [PlainDoc] -> PlainDoc
+prettyGroup l r xs = PP.cat [l, PP.sep (map (PP.nest 2) (prettyPunct (PP.pretty ',') r xs))]
 
-prettyPunct :: HJ.Doc -> HJ.Doc -> [HJ.Doc] -> [HJ.Doc]
+prettyPunct :: PlainDoc -> PlainDoc -> [PlainDoc] -> [PlainDoc]
 prettyPunct _   end []     = [end]
-prettyPunct _   end [x]    = [x HJ.<> end]
-prettyPunct sep end (x:xs) = (x HJ.<> sep) : prettyPunct sep end xs
+prettyPunct _   end [x]    = [x PP.<> end]
+prettyPunct sep end (x:xs) = (x PP.<> sep) : prettyPunct sep end xs
 
 -- | Pretty print 'Expr' using @pretty@.
 --
 -- >>> prettyExpr $ Rec "ex" (OMap.fromList [("[]", App "bar" [])])
 -- ex {`[]` = bar}
-prettyExpr :: Expr -> HJ.Doc
+prettyExpr :: Expr -> PlainDoc
 prettyExpr = ppExpr prettyPretty
 
 -- | Pretty print @'Edit' 'EditExpr'@ using @pretty@.
-prettyEditExpr :: Edit EditExpr -> HJ.Doc
+prettyEditExpr :: Edit EditExpr -> PlainDoc
 prettyEditExpr = ppEditExpr prettyPretty
 
 -- | Compact 'prettyEditExpr'.
-prettyEditExprCompact :: Edit EditExpr -> HJ.Doc
+prettyEditExprCompact :: Edit EditExpr -> PlainDoc
 prettyEditExprCompact = ppEditExprCompact prettyPretty
 
 -------------------------------------------------------------------------------
@@ -216,34 +219,37 @@ prettyEditExprCompact = ppEditExprCompact prettyPretty
 -------------------------------------------------------------------------------
 
 -- | 'Pretty' via @ansi-wl-pprint@ library (with colors).
-ansiWlPretty :: Pretty WL.Doc
+ansiWlPretty :: Pretty AnsiDoc
 ansiWlPretty = Pretty
-    { ppCon    = WL.text
-    , ppRec    = \c xs -> ansiGroup (c WL.<+> WL.lbrace) WL.rbrace
-               $ map (\(fn, d) -> WL.text fn WL.<+> WL.equals WL.</> d) xs
-    , ppLst    = ansiGroup WL.lbracket WL.rbracket
-    , ppCpy    = WL.dullwhite
-    , ppIns    = \d -> WL.green $ WL.plain $ WL.char '+' WL.<> d
-    , ppDel    = \d -> WL.red   $ WL.plain $ WL.char '-' WL.<> d
-    , ppApp    = \f xs -> WL.group $ WL.nest 2 $ f WL.<$> WL.vsep xs
-    , ppEdits  = WL.sep
-    , ppEllip  = WL.text "..."
-    , ppParens = WL.parens
+    { ppCon    = PP.pretty
+    , ppRec    = \c xs -> ansiGroup (c PP.<+> PP.lbrace) PP.rbrace
+               $ map (\(fn, d) -> PP.pretty fn PP.<+> PP.equals <> PP.softline <> d) xs
+    , ppLst    = ansiGroup PP.lbracket PP.rbracket
+    , ppCpy    = PP.annotate (PP.colorDull PP.White)
+    , ppIns    = \d -> PP.annotate (PP.color PP.Green) $ PP.unAnnotate $ PP.pretty '+' PP.<> d
+    , ppDel    = \d -> PP.annotate (PP.color PP.Red)   $ PP.unAnnotate $ PP.pretty '-' PP.<> d
+    , ppApp    = \f xs -> PP.group $ PP.nest 2 $ f <> PP.line <> PP.vsep xs
+    , ppEdits  = PP.sep
+    , ppEllip  = PP.pretty "..."
+    , ppParens = PP.parens
     }
 
-ansiGroup :: WL.Doc -> WL.Doc -> [WL.Doc] -> WL.Doc
-ansiGroup l r xs = WL.group $ WL.nest 2 (l WL.<$$> WL.vsep (WL.punctuate WL.comma xs) WL.<> r)
+ansiGroup :: AnsiDoc -> AnsiDoc -> [AnsiDoc] -> AnsiDoc
+ansiGroup l r xs = PP.group $ PP.nest 2 (l <> linebreak <> PP.vsep (PP.punctuate PP.comma xs) PP.<> r)
+
+linebreak :: PP.Doc ann
+linebreak = PP.flatAlt PP.line mempty
 
 -- | Pretty print 'Expr' using @ansi-wl-pprint@.
-ansiWlExpr :: Expr -> WL.Doc
+ansiWlExpr :: Expr -> AnsiDoc
 ansiWlExpr = ppExpr ansiWlPretty
 
 -- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
-ansiWlEditExpr :: Edit EditExpr -> WL.Doc
+ansiWlEditExpr :: Edit EditExpr -> AnsiDoc
 ansiWlEditExpr = ppEditExpr ansiWlPretty
 
 -- | Compact 'ansiWlEditExpr'
-ansiWlEditExprCompact :: Edit EditExpr -> WL.Doc
+ansiWlEditExprCompact :: Edit EditExpr -> AnsiDoc
 ansiWlEditExprCompact = ppEditExprCompact ansiWlPretty
 
 -------------------------------------------------------------------------------
@@ -251,20 +257,20 @@ ansiWlEditExprCompact = ppEditExprCompact ansiWlPretty
 -------------------------------------------------------------------------------
 
 -- | Like 'ansiWlPretty' but color the background.
-ansiWlBgPretty :: Pretty WL.Doc
+ansiWlBgPretty :: Pretty AnsiDoc
 ansiWlBgPretty = ansiWlPretty
-    { ppIns    = \d -> WL.ondullgreen $ WL.white $ WL.plain $ WL.char '+' WL.<> d
-    , ppDel    = \d -> WL.ondullred   $ WL.white $ WL.plain $ WL.char '-' WL.<> d
+    { ppIns    = \d -> PP.annotate (PP.bgColorDull PP.Green) $ PP.annotate (PP.color PP.White) $ PP.unAnnotate $ PP.pretty '+' PP.<> d
+    , ppDel    = \d -> PP.annotate (PP.bgColorDull PP.Red)   $ PP.annotate (PP.color PP.White) $ PP.unAnnotate $ PP.pretty '-' PP.<> d
     }
 
 -- | Pretty print 'Expr' using @ansi-wl-pprint@.
-ansiWlBgExpr :: Expr -> WL.Doc
+ansiWlBgExpr :: Expr -> AnsiDoc
 ansiWlBgExpr = ppExpr ansiWlBgPretty
 
 -- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
-ansiWlBgEditExpr :: Edit EditExpr -> WL.Doc
+ansiWlBgEditExpr :: Edit EditExpr -> AnsiDoc
 ansiWlBgEditExpr = ppEditExpr ansiWlBgPretty
 
 -- | Compact 'ansiWlBgEditExpr'.
-ansiWlBgEditExprCompact :: Edit EditExpr -> WL.Doc
+ansiWlBgEditExprCompact :: Edit EditExpr -> AnsiDoc
 ansiWlBgEditExprCompact = ppEditExprCompact ansiWlBgPretty

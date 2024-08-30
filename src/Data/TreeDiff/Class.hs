@@ -98,7 +98,7 @@ import qualified Data.Strict as Strict
 import Data.These (These (..))
 
 -- primitive
-import qualified Data.Primitive  as Prim
+import qualified Data.Primitive as Prim
 
 -- $setup
 -- >>> :set -XDeriveGeneric
