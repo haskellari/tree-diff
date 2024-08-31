@@ -1,14 +1,20 @@
+{-# LANGUAGE NamedFieldPuns      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | Utilities to parse 'Expr'.
 --
 -- /Note:/ we don't parse diffs.
 module Data.TreeDiff.Parser (
-    exprParser
+    exprParser,
+    showToExpr,
+    ShowParseFailed,
+    unsafeShowToExpr,
     ) where
 
 import Control.Applicative (many, optional, (<|>))
+import Control.Exception   (Exception(..))
 import Data.Char           (chr, isAlphaNum, isPunctuation, isSymbol)
 
+import GHC.Stack (HasCallStack)
 import Text.Parser.Char            (CharParsing (anyChar, char, satisfy))
 import Text.Parser.Combinators     (between, (<?>))
 import Text.Parser.Token
@@ -18,8 +24,11 @@ import Text.Parser.Token.Highlight
        (Highlight (Identifier, StringLiteral, Symbol))
 
 import Data.TreeDiff.Expr
+import Text.Parsec (ParseError)
 
+import qualified Control.Exception as Exception
 import qualified Data.TreeDiff.OMap as OMap
+import qualified Text.Parsec as Parsec
 
 -- | Parsers for 'Expr' using @parsers@ type-classes.
 --
@@ -111,3 +120,44 @@ valid c = isAlphaNum c || isSymbol c || isPunctuation c
 
 valid' :: Char -> Bool
 valid' c = valid c && c `notElem` "[](){}`\","
+
+{-| Parse an `Expr` from a type's `Show` instance.  This can come in handy if a
+    type already has a `Show` instance and you don't want to have to derive
+    `ToExpr` for that type and all of its dependencies.
+-}
+showToExpr :: Show a => a -> Either ShowParseFailed Expr
+showToExpr a =
+    case Parsec.parse exprParser "" (show a) of
+        Left exception -> Left ShowParseFailed{ exception }
+        Right expr     -> Right expr
+
+instance Exception ShowParseFailed where
+    displayException ShowParseFailed{ exception } =
+        "Failed to parse an Expr from the output of show\n\
+        \\n\
+        \This might be due to the Show instance (or one of the Show instances it depends\n\
+        \on) not being derived.\n\
+        \\n\
+        \Parsing error:\n\
+        \\n\
+        \" <> show exception
+
+-- | `unsafeShowToExpr` failed to parse the output from `show` into an `Expr`
+--
+-- This usually means that the type (or one of its dependencies) has a `Show`
+-- instance that was not derived.
+newtype ShowParseFailed = ShowParseFailed{ exception :: ParseError }
+    deriving (Show)
+
+{-| You can use this to implement the `toExpr` method of the `ToExpr` class.
+    However, this is a partial function that is only safe to use for derived
+    `Show` instances and might fail for other types of instances.
+
+    If this function fails it will `Exception.throw` a `ShowParseFailed`
+    exception.
+-}
+unsafeShowToExpr :: HasCallStack => Show a => a -> Expr
+unsafeShowToExpr a =
+    case showToExpr a of
+        Left  exception -> Exception.throw exception
+        Right expr      -> expr
