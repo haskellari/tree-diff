@@ -1,3 +1,7 @@
+## 0.3.2
+
+- Add 'ediffGolden1', a variant of 'ediffGolden' with an additional argument.
+
 ## 0.3.1
 
 - Support GHC-8.6.5...9.10.1
