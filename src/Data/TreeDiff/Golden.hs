@@ -1,6 +1,7 @@
 -- | "Golden tests" using 'ediff' comparison.
 module Data.TreeDiff.Golden (
     ediffGolden,
+    ediffGolden1,
 ) where
 
 import Data.TreeDiff
@@ -41,9 +42,23 @@ ediffGolden
     -> FilePath  -- ^ path to "golden file"
     -> IO a      -- ^ result value
     -> testTree
-ediffGolden impl testName fp x = impl testName expect actual cmp wrt
+ediffGolden impl testName fp x = ediffGolden1 impl' testName fp (\() -> x) where
+    impl' n expect actual = impl n expect (actual ())
+
+-- | Like 'ediffGolden1' but with an additional argument for generation of actual value.
+--
+-- @since 0.3.2
+--
+ediffGolden1
+    :: (Eq a, ToExpr a)
+    => (testName -> IO Expr -> (arg -> IO Expr) -> (Expr -> Expr -> IO (Maybe String)) -> (Expr -> IO ()) -> testTree) -- ^ 'goldenTest'
+    -> testName  -- ^ test name
+    -> FilePath  -- ^ path to "golden file"
+    -> (arg -> IO a)      -- ^ result value
+    -> testTree
+ediffGolden1 impl testName fp x = impl testName expect actual cmp wrt
   where
-    actual = fmap toExpr x
+    actual arg = fmap toExpr (x arg)
     expect = do
         contents <- BS.readFile fp
         case parse (exprParser <* eof) fp $ TE.decodeUtf8 contents of
