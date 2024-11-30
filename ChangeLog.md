@@ -1,3 +1,9 @@
+## 0.3.3
+
+- Change 'ediffGolden' so that parse errors in expected file don't cause the hard failure.
+  This way you may `--accept` new results even when expected files are broken, e.g. due merge conflict markers.
+  For now the change is a bit a hack to avoid breaking change in type-signature of `ediffGolden/1`.
+
 ## 0.3.2
 
 - Add 'ediffGolden1', a variant of 'ediffGolden' with an additional argument.

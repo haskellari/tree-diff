@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | "Golden tests" using 'ediff' comparison.
 module Data.TreeDiff.Golden (
     ediffGolden,
@@ -50,7 +51,7 @@ ediffGolden impl testName fp x = ediffGolden1 impl' testName fp (\() -> x) where
 -- @since 0.3.2
 --
 ediffGolden1
-    :: (Eq a, ToExpr a)
+    :: forall a arg testName testTree. (Eq a, ToExpr a)
     => (testName -> IO Expr -> (arg -> IO Expr) -> (Expr -> Expr -> IO (Maybe String)) -> (Expr -> IO ()) -> testTree) -- ^ 'goldenTest'
     -> testName  -- ^ test name
     -> FilePath  -- ^ path to "golden file"
@@ -58,12 +59,17 @@ ediffGolden1
     -> testTree
 ediffGolden1 impl testName fp x = impl testName expect actual cmp wrt
   where
+    actual :: arg -> IO Expr
     actual arg = fmap toExpr (x arg)
+
+    expect :: IO Expr
     expect = do
         contents <- BS.readFile fp
         case parse (exprParser <* eof) fp $ TE.decodeUtf8 contents of
-            Left err -> print err >> fail "parse error"
+            Left err -> return $ App "ParseError" [toExpr fp, toExpr (show err)]
             Right r  -> return r
+
+    cmp :: Expr -> Expr -> IO (Maybe [Char])
     cmp a b
         | a == b    = return Nothing
         | otherwise = return $ Just $
