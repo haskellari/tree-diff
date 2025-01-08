@@ -1,3 +1,7 @@
+## 0.3.4
+
+- Remove 'Eq a' requirement from 'ediffGolden'. The constraint wasn't used, as we only compare 'Expr' representations.
+
 ## 0.3.3
 
 - Change 'ediffGolden' so that parse errors in expected file don't cause the hard failure.
