@@ -37,7 +37,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as WL
 -- for a proper example.
 --
 ediffGolden
-    :: (Eq a, ToExpr a)
+    :: ToExpr a
     => (testName -> IO Expr -> IO Expr -> (Expr -> Expr -> IO (Maybe String)) -> (Expr -> IO ()) -> testTree) -- ^ 'goldenTest'
     -> testName  -- ^ test name
     -> FilePath  -- ^ path to "golden file"
@@ -51,7 +51,7 @@ ediffGolden impl testName fp x = ediffGolden1 impl' testName fp (\() -> x) where
 -- @since 0.3.2
 --
 ediffGolden1
-    :: forall a arg testName testTree. (Eq a, ToExpr a)
+    :: forall a arg testName testTree. ToExpr a
     => (testName -> IO Expr -> (arg -> IO Expr) -> (Expr -> Expr -> IO (Maybe String)) -> (Expr -> IO ()) -> testTree) -- ^ 'goldenTest'
     -> testName  -- ^ test name
     -> FilePath  -- ^ path to "golden file"

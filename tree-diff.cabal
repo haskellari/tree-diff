@@ -1,6 +1,6 @@
 cabal-version:      2.2
 name:               tree-diff
-version:            0.3.3
+version:            0.3.4
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
@@ -171,4 +171,4 @@ benchmark tree-diff-bench
   -- extra dependencies
   build-depends:
     , criterion  ^>=1.6.3.0
-    , Diff       ^>=0.5
+    , Diff       ^>=1.0
