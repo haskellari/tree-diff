@@ -1,6 +1,7 @@
 cabal-version:      2.2
 name:               tree-diff
 version:            0.3.4
+x-revision:         1
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
@@ -50,9 +51,10 @@ tested-with:
    || ==9.0.2
    || ==9.2.8
    || ==9.4.8
-   || ==9.6.5
-   || ==9.8.2
+   || ==9.6.7
+   || ==9.8.4
    || ==9.10.1
+   || ==9.12.2
 
 extra-source-files:
   fixtures/exfoo.expr
@@ -80,14 +82,14 @@ library
 
   -- GHC boot libraries
   build-depends:
-    , base        >=4.12.0.0  && <4.21
+    , base        >=4.12.0.0  && <4.22
     , bytestring  ^>=0.10.8.2 || ^>=0.11.0.0 || ^>=0.12.0.2
     , containers  ^>=0.6.0.1  || ^>=0.7
     , deepseq     ^>=1.4.4.0  || ^>=1.5.0.0
     , parsec      ^>=3.1.13.0
     , pretty      ^>=1.1.1.0
     , text        ^>=1.2.3.0  || ^>=2.0      || ^>=2.1
-    , time        ^>=1.8.0.2  || ^>=1.9.3    || ^>=1.10     || ^>=1.11 || ^>=1.12
+    , time        ^>=1.8.0.2  || ^>=1.9.3    || ^>=1.10     || ^>=1.11 || ^>=1.12 || ^>=1.14
 
   build-depends:
     , aeson                 ^>=2.2.0.0
