@@ -134,13 +134,11 @@ test-suite tree-diff-test
 
   -- dependencies from library
   build-depends:
-    , ansi-terminal
     , ansi-wl-pprint
     , base
     , parsec
     , primitive
     , QuickCheck
-    , tagged
     , tree-diff
     , unordered-containers
 
