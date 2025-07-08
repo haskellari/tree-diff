@@ -207,6 +207,8 @@ jobs:
           echo "packages: ${PKGDIR_tree_diff}" >> cabal.project
           echo "package tree-diff" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods -Werror=missing-fields" >> cabal.project
+          if [ $((HCNUMVER >= 90400)) -ne 0 ] ; then echo "package tree-diff" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 90400)) -ne 0 ] ; then echo "    ghc-options: -Werror=unused-packages" >> cabal.project ; fi
           cat >> cabal.project <<EOF
           EOF
           $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: any.$_ installed\n" unless /^(tree-diff)$/; }' >> cabal.project.local
