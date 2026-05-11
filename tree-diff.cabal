@@ -1,6 +1,7 @@
 cabal-version:      2.2
 name:               tree-diff
 version:            0.3.4.1
+x-revision:         1
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
@@ -99,7 +100,7 @@ library
   build-depends:
     , aeson                 ^>=2.2.0.0
     , ansi-terminal         ^>=1.1
-    , ansi-wl-pprint        ^>=1.0.2
+    , ansi-wl-pprint        ^>=1.0.2    || ^>=1.1.1
     , hashable              ^>=1.4.4.0  || ^>=1.5.0.0
     , parsers               ^>=0.12.11
     , primitive             ^>=0.9.0.0
