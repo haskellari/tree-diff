@@ -1,3 +1,10 @@
+## 0.4
+
+- Drop `ansi-wl-pprint` dependency, use `prettyprinter` directly.
+  The naming of functions still uses `ansiWl*` naming scheme, to avoid breaking
+  too many things. Technically, these functions are still compatible with
+  `ansi-wl-pprint` versions which use `prettyprinter` underneath.
+
 ## 0.3.4
 
 - Remove 'Eq a' requirement from 'ediffGolden'. The constraint wasn't used, as we only compare 'Expr' representations.
