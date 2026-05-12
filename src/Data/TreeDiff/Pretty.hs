@@ -10,7 +10,7 @@ module Data.TreeDiff.Pretty (
     prettyExpr,
     prettyEditExpr,
     prettyEditExprCompact,
-    -- * ansi-wl-pprint
+    -- * prettyprinter
     ansiWlPretty,
     ansiWlExpr,
     ansiWlEditExpr,
@@ -30,9 +30,10 @@ import Data.TreeDiff.Expr
 import Numeric            (showHex)
 import Text.Read          (readMaybe)
 
-import qualified Data.TreeDiff.OMap           as OMap
-import qualified Text.PrettyPrint             as HJ
-import qualified Text.PrettyPrint.ANSI.Leijen as WL
+import qualified Data.TreeDiff.OMap            as OMap
+import qualified Prettyprinter                 as PP
+import qualified Prettyprinter.Render.Terminal as PP.A
+import qualified Text.PrettyPrint              as HJ
 
 -- $setup
 -- >>> import qualified Data.TreeDiff.OMap as OMap
@@ -215,56 +216,73 @@ prettyEditExprCompact = ppEditExprCompact prettyPretty
 -- ansi-wl-pprint
 -------------------------------------------------------------------------------
 
--- | 'Pretty' via @ansi-wl-pprint@ library (with colors).
-ansiWlPretty :: Pretty WL.Doc
+-- | 'Pretty' via @prettyprinter@ library (with colors).
+ansiWlPretty :: Pretty (PP.Doc PP.A.AnsiStyle)
 ansiWlPretty = Pretty
-    { ppCon    = WL.text
-    , ppRec    = \c xs -> ansiGroup (c WL.<+> WL.lbrace) WL.rbrace
-               $ map (\(fn, d) -> WL.text fn WL.<+> WL.equals WL.</> d) xs
-    , ppLst    = ansiGroup WL.lbracket WL.rbracket
-    , ppCpy    = WL.dullwhite
-    , ppIns    = \d -> WL.green $ WL.plain $ WL.char '+' WL.<> d
-    , ppDel    = \d -> WL.red   $ WL.plain $ WL.char '-' WL.<> d
-    , ppApp    = \f xs -> WL.group $ WL.nest 2 $ f WL.<$> WL.vsep xs
-    , ppEdits  = WL.sep
-    , ppEllip  = WL.text "..."
-    , ppParens = WL.parens
+    { ppCon    = ppText
+    , ppRec    = \c xs -> ansiGroup (c PP.<+> PP.lbrace) PP.rbrace
+               $ map (\(fn, d) -> ppText fn PP.<+> (PP.equals PP.<> PP.softline PP.<> d)) xs
+    , ppLst    = ansiGroup PP.lbracket PP.rbracket
+    , ppCpy    = ppDullWhite
+    , ppIns    = \d -> ppGreen $ PP.unAnnotate $ ppChar '+' PP.<> d
+    , ppDel    = \d -> ppRed   $ PP.unAnnotate $ ppChar '-' PP.<> d
+    , ppApp    = \f xs -> PP.group $ PP.nest 2 $ f PP.<> PP.line PP.<> PP.vsep xs
+    , ppEdits  = PP.sep
+    , ppEllip  = ppText "..."
+    , ppParens = PP.parens
     }
 
-ansiGroup :: WL.Doc -> WL.Doc -> [WL.Doc] -> WL.Doc
-ansiGroup l r xs = WL.group $ WL.nest 2 (l WL.<$$> WL.vsep (WL.punctuate WL.comma xs) WL.<> r)
+ansiGroup :: PP.Doc PP.A.AnsiStyle -> PP.Doc PP.A.AnsiStyle -> [PP.Doc PP.A.AnsiStyle] -> PP.Doc PP.A.AnsiStyle
+ansiGroup l r xs = PP.group $ PP.nest 2 (l PP.<> ppLinebreak PP.<> PP.vsep (PP.punctuate PP.comma xs) PP.<> r)
 
 -- | Pretty print 'Expr' using @ansi-wl-pprint@.
-ansiWlExpr :: Expr -> WL.Doc
+ansiWlExpr :: Expr -> PP.Doc PP.A.AnsiStyle
 ansiWlExpr = ppExpr ansiWlPretty
 
 -- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
-ansiWlEditExpr :: Edit EditExpr -> WL.Doc
+ansiWlEditExpr :: Edit EditExpr -> PP.Doc PP.A.AnsiStyle
 ansiWlEditExpr = ppEditExpr ansiWlPretty
 
 -- | Compact 'ansiWlEditExpr'
-ansiWlEditExprCompact :: Edit EditExpr -> WL.Doc
+ansiWlEditExprCompact :: Edit EditExpr -> PP.Doc PP.A.AnsiStyle
 ansiWlEditExprCompact = ppEditExprCompact ansiWlPretty
+
+ppChar :: Char -> PP.Doc PP.A.AnsiStyle
+ppChar = PP.pretty
+
+ppText :: String -> PP.Doc PP.A.AnsiStyle
+ppText = PP.pretty
+
+ppLinebreak :: PP.Doc a
+ppLinebreak = PP.flatAlt PP.line mempty
+
+ppWhite, ppDullWhite, ppRed, ppGreen, ppOnDullRed, ppOnDullGreen :: PP.Doc PP.A.AnsiStyle -> PP.Doc PP.A.AnsiStyle
+ppWhite         = PP.annotate (PP.A.color       PP.A.White)
+ppDullWhite     = PP.annotate (PP.A.colorDull   PP.A.White)
+ppRed           = PP.annotate (PP.A.color       PP.A.Red)
+ppGreen         = PP.annotate (PP.A.color       PP.A.Green)
+ppOnDullRed     = PP.annotate (PP.A.bgColorDull PP.A.Red)
+ppOnDullGreen   = PP.annotate (PP.A.bgColorDull PP.A.Green)
 
 -------------------------------------------------------------------------------
 -- Background
 -------------------------------------------------------------------------------
 
 -- | Like 'ansiWlPretty' but color the background.
-ansiWlBgPretty :: Pretty WL.Doc
+ansiWlBgPretty :: Pretty (PP.Doc PP.A.AnsiStyle)
 ansiWlBgPretty = ansiWlPretty
-    { ppIns    = \d -> WL.ondullgreen $ WL.white $ WL.plain $ WL.char '+' WL.<> d
-    , ppDel    = \d -> WL.ondullred   $ WL.white $ WL.plain $ WL.char '-' WL.<> d
+    { ppIns    = \d -> ppOnDullGreen $ ppWhite $ PP.unAnnotate $ ppChar '+' PP.<> d
+    , ppDel    = \d -> ppOnDullRed   $ ppWhite $ PP.unAnnotate $ ppChar '-' PP.<> d
     }
 
 -- | Pretty print 'Expr' using @ansi-wl-pprint@.
-ansiWlBgExpr :: Expr -> WL.Doc
+ansiWlBgExpr :: Expr -> PP.Doc PP.A.AnsiStyle
 ansiWlBgExpr = ppExpr ansiWlBgPretty
 
 -- | Pretty print @'Edit' 'EditExpr'@ using @ansi-wl-pprint@.
-ansiWlBgEditExpr :: Edit EditExpr -> WL.Doc
+ansiWlBgEditExpr :: Edit EditExpr -> PP.Doc PP.A.AnsiStyle
 ansiWlBgEditExpr = ppEditExpr ansiWlBgPretty
 
 -- | Compact 'ansiWlBgEditExpr'.
-ansiWlBgEditExprCompact :: Edit EditExpr -> WL.Doc
+ansiWlBgEditExprCompact :: Edit EditExpr -> PP.Doc PP.A.AnsiStyle
 ansiWlBgEditExprCompact = ppEditExprCompact ansiWlBgPretty

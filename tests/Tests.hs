@@ -10,12 +10,12 @@ import Test.Tasty                 (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.QuickCheck      (testProperty)
 
-import qualified Data.HashSet                 as HS
-import qualified Data.Primitive               as Prim
-import qualified Text.Parsec                  as P
-import qualified Text.PrettyPrint.ANSI.Leijen as WL
-import qualified Text.Trifecta                as T (eof, parseString)
-import qualified Text.Trifecta.Result         as T (ErrInfo (..), Result (..))
+import qualified Data.HashSet         as HS
+import qualified Data.Primitive       as Prim
+import qualified Prettyprinter        as PP
+import qualified Text.Parsec          as P
+import qualified Text.Trifecta        as T (eof, parseString)
+import qualified Text.Trifecta.Result as T (ErrInfo (..), Result (..))
 
 import Data.TreeDiff
 import Data.TreeDiff.Golden
@@ -73,7 +73,7 @@ roundtripTrifectaPretty e = counterexample info $ ediffEq (Just e) res'
 roundtripParsecAnsiWl :: Expr -> Property
 roundtripParsecAnsiWl e = counterexample info $ ediffEq (Just e) res'
   where
-    doc = show (WL.plain (ansiWlExpr e))
+    doc = show (PP.unAnnotate (ansiWlExpr e))
     res = P.parse (exprParser <* P.eof) "<memory>" doc
 
     info = case res of
