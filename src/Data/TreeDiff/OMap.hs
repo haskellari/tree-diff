@@ -14,10 +14,12 @@ module Data.TreeDiff.OMap (
     elems,
 ) where
 
+import Prelude hiding (zipWith)
+
 import Control.DeepSeq (NFData (..))
 import Data.List       (sortBy)
 import Data.Ord        (comparing)
-import Data.Semialign  (Semialign(..), Unzip (..), unzipDefault)
+import Data.Semialign  (Semialign(..), Unzip (..), Zip (..), unzipDefault)
 import Data.These      (These (..))
 
 import qualified Data.Map.Strict as Map
@@ -149,5 +151,10 @@ instance Ord k => Semialign (OMap k) where
         g (That (Val j y))            = Val j (f (That y))
         g (These (Val i x) (Val j y)) = Val (min i j) (f (These x y))
 
-instance Unzip (OMap k) where
+instance Ord k => Zip (OMap k) where
+    zipWith f (OMap xs) (OMap ys) = OMap (zipWith g xs ys) where
+        g (Val i x) (Val j y) = Val (min i j) (f x y)
+
+-- Ord k is required for semialign <1.4
+instance Ord k => Unzip (OMap k) where
     unzip = unzipDefault

@@ -1,3 +1,7 @@
+## 0.4.1
+
+- Fix build with semialign-1.3
+
 ## 0.4
 
 - Drop `ansi-wl-pprint` dependency, use `prettyprinter` directly.
