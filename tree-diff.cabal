@@ -1,6 +1,6 @@
 cabal-version:      2.2
 name:               tree-diff
-version:            0.4
+version:            0.4.1
 synopsis:           Diffing of (expression) trees.
 category:           Data, Testing
 description:
